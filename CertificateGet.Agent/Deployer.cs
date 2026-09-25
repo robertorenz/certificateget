@@ -85,9 +85,10 @@ public static class Deployer
                         }
                         Ok($"{label}: wrote {string.Join(", ", dest.Files.Select(f => f.FileName))} to {dest.Folder}");
                     }
-                    services.AddRange(dest.RestartServices);
-                    programs.AddRange(dest.RestartPrograms);
-                    commands.AddRange(dest.Commands.Select(c => (c, dest.Folder)));
+                    // Blank entries (e.g. "RestartServices": [""]) are ignored.
+                    services.AddRange(dest.RestartServices.Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => s.Trim()));
+                    programs.AddRange(dest.RestartPrograms.Where(p => !string.IsNullOrWhiteSpace(p.Path)));
+                    commands.AddRange(dest.Commands.Where(c => !string.IsNullOrWhiteSpace(c)).Select(c => (c, dest.Folder)));
                 }
                 catch (Exception ex)
                 {
@@ -112,7 +113,7 @@ public static class Deployer
                 catch (Exception ex) { Fail($"Restart {Path.GetFileName(prog.Path)}: {ex.Message}"); }
             }
 
-            foreach (var (cmd, folder) in commands.Concat(slot.Commands.Select(c => (c, ""))))
+            foreach (var (cmd, folder) in commands.Concat(slot.Commands.Where(c => !string.IsNullOrWhiteSpace(c)).Select(c => (c, ""))))
             {
                 try { Ok(await RunCommandAsync(cmd.Replace("{folder}", folder))); }
                 catch (Exception ex) { Fail(ex.Message); }

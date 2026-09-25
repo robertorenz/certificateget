@@ -5,7 +5,12 @@
 $common = @('-c', 'Release', '--self-contained', 'true', '-p:PublishSingleFile=true', '-p:IncludeNativeLibrariesForSelfExtract=true',
             '-p:EnableCompressionInSingleFile=true', '-p:DebugType=none', '-nologo')
 
-dotnet publish "$PSScriptRoot\CertificateGet\CertificateGet.csproj" -r win-x64 @common -o "$PSScriptRoot\run"
+$appExe = Join-Path $PSScriptRoot 'run\CertificateGet.exe'
+if (Get-Process | Where-Object { $_.Path -eq $appExe }) {
+    Write-Warning "CertificateGet.exe is running from run\ — close it and run this script again to update the app. Building the agents only."
+} else {
+    dotnet publish "$PSScriptRoot\CertificateGet\CertificateGet.csproj" -r win-x64 @common -o "$PSScriptRoot\run"
+}
 
 $agents = @(
     @{ Rid = 'win-x64';   Dir = 'agent-windows'; Example = 'agent.windows.json' },

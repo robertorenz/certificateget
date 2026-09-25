@@ -245,7 +245,9 @@ static class Cli
                         if (string.IsNullOrWhiteSpace(f.FileName)) Bad($"{label}: a file has no FileName");
                     }
                 }
-                foreach (var prog in d.RestartPrograms)
+                if (d.RestartServices.Any(string.IsNullOrWhiteSpace) || d.Commands.Any(string.IsNullOrWhiteSpace) || d.RestartPrograms.Any(p => string.IsNullOrWhiteSpace(p.Path)))
+                    Console.WriteLine($"  ! {label}: has empty entries (e.g. \"RestartServices\": [\"\"]) — they are ignored; use [] for an empty list.");
+                foreach (var prog in d.RestartPrograms.Where(p => !string.IsNullOrWhiteSpace(p.Path)))
                 {
                     if (!OperatingSystem.IsWindows()) Bad($"{label}: RestartPrograms only works on Windows (use Commands)");
                     else if (!File.Exists(prog.Path)) Bad($"{label}: program not found: {prog.Path}");
@@ -253,7 +255,7 @@ static class Cli
                         Bad($"{label}: StartIn must be SameSession, Console or Background (is \"{prog.StartIn}\")");
                 }
                 if (OperatingSystem.IsWindows())
-                    foreach (var svc in d.RestartServices)
+                    foreach (var svc in d.RestartServices.Where(s => !string.IsNullOrWhiteSpace(s)))
                         if (!ServiceExists(svc)) Bad($"{label}: Windows service \"{svc}\" not found");
                 Console.WriteLine($"  • {label}");
             }
