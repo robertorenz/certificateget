@@ -1,8 +1,6 @@
-# Builds a single-file CertificateGet.exe into .\publish (requires the .NET 9 Desktop Runtime on the target machine).
-# Add -SelfContained to bundle the runtime (bigger file, no runtime needed).
-param([switch]$SelfContained)
-
-$sc = if ($SelfContained) { "true" } else { "false" }
+# Builds a self-contained, compressed single-file CertificateGet.exe into .\run
+# (no .NET runtime needed on the target machine).
 dotnet publish "$PSScriptRoot\CertificateGet\CertificateGet.csproj" -c Release -r win-x64 `
-    --self-contained $sc -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
-    -o "$PSScriptRoot\publish"
+    --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
+    -p:EnableCompressionInSingleFile=true -p:DebugType=none `
+    -o "$PSScriptRoot\run"

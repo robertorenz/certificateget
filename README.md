@@ -44,11 +44,11 @@ A Windows desktop app (C# / WPF, .NET 9) that gets free TLS certificates from **
 dotnet run --project CertificateGet
 ```
 
-Single-file release build in `.\publish`:
+Self-contained, compressed single-file build in `.\run` (no .NET runtime needed on the target machine, about 62 MB):
 
 ```powershell
-.\publish.ps1                 # needs the .NET 9 Desktop Runtime installed
-.\publish.ps1 -SelfContained  # bundles the runtime
+.\publish.ps1
+.\run\CertificateGet.exe
 ```
 
 Run it **as administrator** when you want to install into the Local Machine certificate store, or when you write into a web root that only admins can modify.

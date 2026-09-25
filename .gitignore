@@ -12,3 +12,4 @@ publish/
 *.pem
 *.cer
 *.crt
+run/
