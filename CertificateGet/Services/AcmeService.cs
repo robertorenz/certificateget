@@ -1,0 +1,318 @@
+using System.Net.Sockets;
+using System.Text.Json;
+using Certes;
+using Certes.Acme;
+using Certes.Acme.Resource;
+using CertificateGet.Models;
+using Directory = System.IO.Directory;
+
+namespace CertificateGet.Services;
+
+/// <summary>What the issuing workflow needs from the UI while it runs.</summary>
+public interface IIssueUi
+{
+    /// <summary>Show the TXT records the user must create; return false to cancel.</summary>
+    Task<bool> ConfirmDnsRecordsAsync(IList<DnsTxtRecord> records);
+}
+
+public class AcmeAccountRecord
+{
+    public string Environment { get; set; } = "";
+    public string? Email { get; set; }
+    public string ProtectedKeyPem { get; set; } = "";
+    public DateTime CreatedUtc { get; set; }
+}
+
+public class AcmeService
+{
+    private readonly CertificateProfile _p;
+    private readonly Action<LogLevel, string> _report;
+
+    public AcmeService(CertificateProfile profile, Action<LogLevel, string> report)
+    {
+        _p = profile;
+        _report = report;
+    }
+
+    private void Step(string message, LogLevel level = LogLevel.Info)
+    {
+        ActivityLog.Write(level, "Issue", message, _p.Name);
+        _report(level, message);
+    }
+
+    public static Uri DirectoryFor(AcmeEnvironment env) =>
+        env == AcmeEnvironment.Production ? WellKnownServers.LetsEncryptV2 : WellKnownServers.LetsEncryptStagingV2;
+
+    private async Task<IAcmeContext> GetAccountAsync()
+    {
+        SettingsService.EnsureStore();
+        var file = Path.Combine(SettingsService.AccountsPath, $"{_p.Environment.ToString().ToLowerInvariant()}.json");
+        if (File.Exists(file))
+        {
+            var rec = JsonSerializer.Deserialize<AcmeAccountRecord>(File.ReadAllText(file), Json.Options);
+            var pem = Secret.Unprotect(rec?.ProtectedKeyPem);
+            if (pem != null)
+            {
+                Step($"Using existing Let's Encrypt {_p.EnvironmentDisplay} account.");
+                return new AcmeContext(DirectoryFor(_p.Environment), KeyFactory.FromPem(pem));
+            }
+            Step("Stored account key could not be decrypted (different Windows user?) — creating a new account.", LogLevel.Warning);
+        }
+
+        Step($"Creating a new Let's Encrypt {_p.EnvironmentDisplay} account…");
+        var key = KeyFactory.NewKey(KeyAlgorithm.ES256);
+        var ctx = new AcmeContext(DirectoryFor(_p.Environment), key);
+        var email = string.IsNullOrWhiteSpace(_p.Email) ? SettingsService.Current.DefaultEmail : _p.Email;
+        try
+        {
+            var contact = string.IsNullOrWhiteSpace(email) ? new List<string>() : new List<string> { "mailto:" + email.Trim() };
+            await ctx.NewAccount(contact, true, null, null, null);
+        }
+        catch (AcmeRequestException ex) when (!string.IsNullOrWhiteSpace(email))
+        {
+            Step($"Account with contact e-mail was rejected ({Describe(ex)}); retrying without e-mail.", LogLevel.Warning);
+            await ctx.NewAccount(new List<string>(), true, null, null, null);
+        }
+
+        var record = new AcmeAccountRecord
+        {
+            Environment = _p.Environment.ToString(),
+            Email = email,
+            ProtectedKeyPem = Secret.Protect(key.ToPem())!,
+            CreatedUtc = DateTime.UtcNow
+        };
+        File.WriteAllText(file, JsonSerializer.Serialize(record, Json.Options));
+        ActivityLog.Success("Account", $"Created Let's Encrypt {_p.EnvironmentDisplay} account{(string.IsNullOrWhiteSpace(email) ? "" : " for " + email)}.");
+        return ctx;
+    }
+
+    public static string Describe(Exception ex) => ex switch
+    {
+        AcmeRequestException are when are.Error?.Detail != null => are.Error.Detail,
+        _ => ex.Message
+    };
+
+    private record PendingChallenge(IAuthorizationContext Authz, IChallengeContext Challenge, string Domain, string Display);
+
+    public async Task<IssuedCertificate> IssueAsync(string? pfxPassword, IIssueUi ui, CancellationToken ct)
+    {
+        var isDns = _p.Challenge is ChallengeMethod.DnsManual or ChallengeMethod.DnsCloudflare;
+        if (_p.IsWildcard && !isDns)
+            throw new InvalidOperationException("Wildcard certificates can only be validated with a DNS challenge.");
+
+        Step($"Requesting certificate for {_p.DomainsDisplay} ({_p.EnvironmentDisplay}).");
+        var ctx = await GetAccountAsync();
+        ct.ThrowIfCancellationRequested();
+
+        var order = await ctx.NewOrder(_p.Domains);
+        Step("Order created. Fetching authorizations…");
+
+        var pending = new List<PendingChallenge>();
+        foreach (var authz in await order.Authorizations())
+        {
+            var res = await authz.Resource();
+            var domain = res.Identifier.Value;
+            var display = res.Wildcard == true ? "*." + domain : domain;
+            if (res.Status == AuthorizationStatus.Valid)
+            {
+                Step($"{display}: already validated recently, no challenge needed.");
+                continue;
+            }
+            var ch = isDns ? await authz.Dns() : await authz.Http();
+            if (ch == null) throw new InvalidOperationException($"Let's Encrypt offered no {(isDns ? "DNS" : "HTTP")} challenge for {display}.");
+            pending.Add(new PendingChallenge(authz, ch, domain, display));
+        }
+
+        if (pending.Count > 0)
+        {
+            switch (_p.Challenge)
+            {
+                case ChallengeMethod.HttpSelfHosted: await RunHttpSelfHosted(pending, ct); break;
+                case ChallengeMethod.HttpWebRoot: await RunHttpWebRoot(pending, ct); break;
+                case ChallengeMethod.DnsManual: await RunDnsManual(ctx, pending, ui, ct); break;
+                case ChallengeMethod.DnsCloudflare: await RunDnsCloudflare(ctx, pending, ct); break;
+            }
+        }
+
+        await WaitForOrder(order, OrderStatus.Ready, ct);
+
+        Step($"All domains validated. Generating {_p.KeyType} private key and CSR…");
+        var (key, keyPem) = CertificateStore.NewPrivateKey(_p.KeyType);
+        using (key)
+        {
+            var csr = CertificateStore.CreateCsr(key, _p.Domains);
+            await order.Finalize(csr);
+        }
+        Step("CSR submitted. Waiting for Let's Encrypt to issue the certificate…");
+        await WaitForOrder(order, OrderStatus.Valid, ct);
+
+        var chain = await order.Download(null);
+        var leafPem = chain.Certificate.ToPem();
+        var issuers = chain.Issuers.Select(i => i.ToPem()).ToList();
+
+        var issued = CertificateStore.SaveIssuance(_p, leafPem, issuers, keyPem, pfxPassword);
+        Step($"Certificate issued by {issued.Issuer}, valid until {issued.NotAfter.ToLocalTime():yyyy-MM-dd HH:mm}. Saved {issued.Files.Count} files.", LogLevel.Success);
+        return issued;
+    }
+
+    private async Task WaitForOrder(IOrderContext order, OrderStatus wanted, CancellationToken ct)
+    {
+        for (var i = 0; i < 60; i++)
+        {
+            var o = await order.Resource();
+            if (o.Status == wanted || o.Status == OrderStatus.Valid) return;
+            if (o.Status == OrderStatus.Invalid)
+                throw new InvalidOperationException("Let's Encrypt marked the order invalid. Check the activity log for challenge errors.");
+            await Task.Delay(2000, ct);
+        }
+        throw new TimeoutException($"Timed out waiting for the order to become {wanted}.");
+    }
+
+    private async Task ValidateAll(List<PendingChallenge> pending, CancellationToken ct)
+    {
+        foreach (var pc in pending)
+        {
+            Step($"{pc.Display}: asking Let's Encrypt to validate…");
+            await pc.Challenge.Validate();
+        }
+
+        foreach (var pc in pending)
+        {
+            for (var i = 0; ; i++)
+            {
+                ct.ThrowIfCancellationRequested();
+                await Task.Delay(i == 0 ? 1500 : 3000, ct);
+                var r = await pc.Challenge.Resource();
+                if (r.Status == ChallengeStatus.Valid)
+                {
+                    Step($"{pc.Display}: validated ✔", LogLevel.Success);
+                    break;
+                }
+                if (r.Status == ChallengeStatus.Invalid)
+                    throw new InvalidOperationException($"{pc.Display}: validation failed — {r.Error?.Detail ?? "no detail given"}");
+                if (i > 60) throw new TimeoutException($"{pc.Display}: validation timed out.");
+            }
+        }
+    }
+
+    private async Task RunHttpSelfHosted(List<PendingChallenge> pending, CancellationToken ct)
+    {
+        using var server = new Http01Server();
+        foreach (var pc in pending) server.AddToken(pc.Challenge.Token, pc.Challenge.KeyAuthz);
+        try
+        {
+            server.Start(_p.HttpPort);
+        }
+        catch (SocketException ex)
+        {
+            throw new InvalidOperationException(
+                $"Could not listen on port {_p.HttpPort}: {ex.Message}. If IIS or another web server is using the port, use the \"HTTP (web root)\" method instead.");
+        }
+        Step($"Built-in HTTP server listening on port {_p.HttpPort}. Let's Encrypt must reach http://<domain>/.well-known/acme-challenge/ on this machine.");
+        await ValidateAll(pending, ct);
+    }
+
+    private async Task RunHttpWebRoot(List<PendingChallenge> pending, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(_p.WebRootPath) || !Directory.Exists(_p.WebRootPath!))
+            throw new InvalidOperationException($"Web root folder not found: {_p.WebRootPath}");
+
+        var dir = Path.Combine(_p.WebRootPath, ".well-known", "acme-challenge");
+        Directory.CreateDirectory(dir);
+        var written = new List<string>();
+        // IIS will not serve extension-less files without a MIME map.
+        var webConfig = Path.Combine(dir, "web.config");
+        if (!File.Exists(webConfig))
+        {
+            File.WriteAllText(webConfig,
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<configuration>\n  <system.webServer>\n    <staticContent>\n" +
+                "      <remove fileExtension=\".\" />\n      <mimeMap fileExtension=\".\" mimeType=\"text/plain\" />\n" +
+                "    </staticContent>\n    <handlers>\n      <clear />\n      <add name=\"StaticFile\" path=\"*\" verb=\"*\" modules=\"StaticFileModule\" resourceType=\"Either\" requireAccess=\"Read\" />\n" +
+                "    </handlers>\n  </system.webServer>\n</configuration>\n");
+            written.Add(webConfig);
+        }
+        try
+        {
+            foreach (var pc in pending)
+            {
+                var file = Path.Combine(dir, pc.Challenge.Token);
+                await File.WriteAllTextAsync(file, pc.Challenge.KeyAuthz, ct);
+                written.Add(file);
+                Step($"{pc.Display}: wrote challenge file {file}");
+            }
+            await ValidateAll(pending, ct);
+        }
+        finally
+        {
+            foreach (var f in written)
+                try { File.Delete(f); } catch { }
+            Step("Removed challenge files from the web root.");
+        }
+    }
+
+    private List<DnsTxtRecord> BuildDnsRecords(IAcmeContext ctx, List<PendingChallenge> pending) =>
+        pending.Select(pc => new DnsTxtRecord
+        {
+            Domain = pc.Display,
+            RecordName = "_acme-challenge." + pc.Domain,
+            Value = ctx.AccountKey.DnsTxt(pc.Challenge.Token)
+        }).ToList();
+
+    private async Task RunDnsManual(IAcmeContext ctx, List<PendingChallenge> pending, IIssueUi ui, CancellationToken ct)
+    {
+        var records = BuildDnsRecords(ctx, pending);
+        foreach (var r in records) Step($"DNS TXT needed: {r.RecordName} = {r.Value}");
+        if (!await ui.ConfirmDnsRecordsAsync(records))
+            throw new OperationCanceledException("Cancelled while waiting for DNS records.");
+        await DnsChecker.AllVisibleAsync(records);
+        foreach (var r in records.Where(r => !r.Found))
+            Step($"{r.RecordName} is not visible yet on public resolvers — validating anyway.", LogLevel.Warning);
+        await ValidateAll(pending, ct);
+        Step("You can now delete the _acme-challenge TXT records from your DNS.");
+    }
+
+    private async Task RunDnsCloudflare(IAcmeContext ctx, List<PendingChallenge> pending, CancellationToken ct)
+    {
+        var token = Secret.Unprotect(SettingsService.Current.ProtectedCloudflareToken)
+                    ?? throw new InvalidOperationException("No Cloudflare API token configured. Add one in Settings.");
+        var records = BuildDnsRecords(ctx, pending);
+        using var cf = new CloudflareDns(token);
+        try
+        {
+            foreach (var r in records)
+            {
+                await cf.CreateTxtAsync(r.RecordName, r.Value);
+                Step($"Cloudflare: created TXT {r.RecordName}");
+            }
+            await WaitForPropagation(records, ct);
+            await ValidateAll(pending, ct);
+        }
+        finally
+        {
+            await cf.CleanupAsync();
+            Step("Cloudflare: removed challenge TXT records.");
+        }
+    }
+
+    private async Task WaitForPropagation(List<DnsTxtRecord> records, CancellationToken ct)
+    {
+        var deadline = DateTime.UtcNow.AddSeconds(SettingsService.Current.DnsPropagationTimeoutSeconds);
+        Step("Waiting for DNS propagation…");
+        while (true)
+        {
+            if (await DnsChecker.AllVisibleAsync(records))
+            {
+                Step("DNS records are visible on public resolvers.", LogLevel.Success);
+                // Give secondary name servers a moment too.
+                await Task.Delay(10000, ct);
+                return;
+            }
+            if (DateTime.UtcNow > deadline)
+            {
+                Step("DNS propagation timeout reached — validating anyway.", LogLevel.Warning);
+                return;
+            }
+            await Task.Delay(10000, ct);
+        }
+    }
+}

@@ -1,0 +1,119 @@
+<UserControl x:Class="CertificateGet.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Margin="32,28,32,24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+        <Grid Margin="0,0,0,20">
+            <StackPanel>
+                <TextBlock Text="Settings" Style="{StaticResource PageTitle}"/>
+                <TextBlock Text="Where things are stored, defaults for new certificates, output formats and DNS automation." Style="{StaticResource PageSubtitle}"/>
+            </StackPanel>
+            <Button Style="{StaticResource PrimaryButton}" HorizontalAlignment="Right" VerticalAlignment="Center" Click="Save_Click" Padding="18,8">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="&#xE74E;" Style="{StaticResource Icon}" Margin="0,0,7,0"/>
+                    <TextBlock Text="Save settings"/>
+                </StackPanel>
+            </Button>
+        </Grid>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <Grid Margin="0,0,10,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition Width="20"/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel>
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Text="Storage" Style="{StaticResource SectionTitle}"/>
+                            <TextBlock Text="Store folder" Style="{StaticResource FieldLabel}" Margin="0,0,0,5"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="StoreBox"/>
+                                <Button Grid.Column="1" Content="Browse…" Margin="8,0,0,0" Click="BrowseStore_Click"/>
+                                <Button Grid.Column="2" Content="Open" Margin="8,0,0,0" Click="OpenStore_Click"/>
+                            </Grid>
+                            <TextBlock Style="{StaticResource Hint}" Text="Holds every certificate, private key, the Let's Encrypt account keys and the activity log. Changing it does not move existing files — copy the folder yourself. Avoid cloud-synced folders: private keys live here."/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+                        <StackPanel>
+                            <TextBlock Text="Defaults for new certificates" Style="{StaticResource SectionTitle}"/>
+                            <TextBlock Text="Contact e-mail" Style="{StaticResource FieldLabel}" Margin="0,0,0,5"/>
+                            <TextBox x:Name="EmailBox" Tag="you@example.com"/>
+                            <TextBlock Text="Environment" Style="{StaticResource FieldLabel}"/>
+                            <StackPanel Orientation="Horizontal">
+                                <RadioButton x:Name="EnvStaging" Content="Staging (test)" GroupName="denv" Margin="0,0,20,0"/>
+                                <RadioButton x:Name="EnvProduction" Content="Production" GroupName="denv"/>
+                            </StackPanel>
+                            <TextBlock Text="Key type" Style="{StaticResource FieldLabel}"/>
+                            <ComboBox x:Name="KeyTypeBox">
+                                <ComboBoxItem Content="RSA 2048 (most compatible)" Tag="Rsa2048"/>
+                                <ComboBoxItem Content="RSA 3072" Tag="Rsa3072"/>
+                                <ComboBoxItem Content="RSA 4096" Tag="Rsa4096"/>
+                                <ComboBoxItem Content="ECDSA P-256" Tag="EcdsaP256"/>
+                                <ComboBoxItem Content="ECDSA P-384" Tag="EcdsaP384"/>
+                            </ComboBox>
+                            <TextBlock Text="Warn when a certificate expires within (days)" Style="{StaticResource FieldLabel}"/>
+                            <TextBox x:Name="WarnDaysBox" Width="90" HorizontalAlignment="Left"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+                        <StackPanel>
+                            <TextBlock Text="Let's Encrypt accounts" Style="{StaticResource SectionTitle}"/>
+                            <TextBlock x:Name="AccountsText" Style="{StaticResource Hint}" Margin="0"/>
+                            <Button Content="Reset accounts…" HorizontalAlignment="Left" Margin="0,12,0,0" Click="ResetAccounts_Click"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2">
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <TextBlock Text="Output formats" Style="{StaticResource SectionTitle}"/>
+                            <TextBlock Text="Private key (.key) format" Style="{StaticResource FieldLabel}" Margin="0,0,0,6"/>
+                            <RadioButton x:Name="KeyPkcs8" Content="PKCS#8 — BEGIN PRIVATE KEY (modern, recommended)" GroupName="kf" Margin="0,0,0,6"/>
+                            <RadioButton x:Name="KeyTraditional" Content="Traditional — BEGIN RSA / EC PRIVATE KEY (older software)" GroupName="kf"/>
+                            <TextBlock Text="PFX encryption" Style="{StaticResource FieldLabel}" Margin="0,16,0,6"/>
+                            <RadioButton x:Name="PfxLegacy" Content="3DES / SHA-1 — imports everywhere (Windows Server 2016, older appliances)" GroupName="pfx" Margin="0,0,0,6"/>
+                            <RadioButton x:Name="PfxAes" Content="AES-256 / SHA-256 — stronger, needs Windows Server 2019+ / modern OpenSSL" GroupName="pfx"/>
+                            <TextBlock Style="{StaticResource Hint}" Margin="0,8,0,0" Text="Applies to newly issued certificates and exports. Existing files are unchanged — use Export to re-create them."/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+                        <StackPanel>
+                            <TextBlock Text="DNS" Style="{StaticResource SectionTitle}"/>
+                            <TextBlock Text="Cloudflare API token" Style="{StaticResource FieldLabel}" Margin="0,0,0,5"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <PasswordBox x:Name="CfTokenBox"/>
+                                <Button Grid.Column="1" Content="Test token" Margin="8,0,0,0" Click="TestToken_Click"/>
+                            </Grid>
+                            <TextBlock x:Name="CfHint" Style="{StaticResource Hint}" Text="Create a token in Cloudflare → My Profile → API Tokens with Zone:Read and DNS:Edit for your zones. Stored encrypted (DPAPI)."/>
+
+                            <TextBlock Text="Public DNS resolvers used to check TXT records" Style="{StaticResource FieldLabel}"/>
+                            <TextBox x:Name="ResolversBox" Tag="1.1.1.1, 8.8.8.8"/>
+                            <TextBlock Text="Maximum wait for DNS propagation (seconds)" Style="{StaticResource FieldLabel}"/>
+                            <TextBox x:Name="PropagationBox" Width="90" HorizontalAlignment="Left"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

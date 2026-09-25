@@ -1,0 +1,242 @@
+<UserControl x:Class="CertificateGet.Views.NewCertificateView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Margin="32,28,32,24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Margin="0,0,0,20">
+            <TextBlock x:Name="PageTitle" Text="New certificate" Style="{StaticResource PageTitle}"/>
+            <TextBlock x:Name="PageSubtitle" Text="Choose the domains, how Let's Encrypt should verify you control them, and the output options." Style="{StaticResource PageSubtitle}"/>
+        </StackPanel>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="6*"/>
+                <ColumnDefinition Width="20"/>
+                <ColumnDefinition Width="5*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- ===== Form ===== -->
+            <ScrollViewer x:Name="FormScroll" VerticalScrollBarVisibility="Auto">
+                <StackPanel x:Name="FormPanel" Margin="0,0,10,0">
+
+                    <!-- Domains -->
+                    <Border Style="{StaticResource Card}">
+                        <StackPanel>
+                            <Grid>
+                                <TextBlock Text="1 · Domains" Style="{StaticResource SectionTitle}"/>
+                                <Border Background="{StaticResource CardAltBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
+                                        CornerRadius="8" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-4,0,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <RadioButton x:Name="TypeStandard" Content="Standard" Style="{StaticResource PillChoice}" GroupName="ctype" IsChecked="True" Checked="Type_Changed"/>
+                                        <RadioButton x:Name="TypeWildcard" Content="Wildcard" Style="{StaticResource PillChoice}" GroupName="ctype" Checked="Type_Changed"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+
+                            <StackPanel x:Name="StandardPanel">
+                                <TextBlock Text="Domain names (one per line)" Style="{StaticResource FieldLabel}" Margin="0,4,0,5"/>
+                                <TextBox x:Name="DomainsBox" AcceptsReturn="True" Height="92" VerticalContentAlignment="Top"
+                                         VerticalScrollBarVisibility="Auto" FontFamily="{StaticResource MonoFont}"
+                                         Tag="www.example.com&#x0a;example.com" TextChanged="Domains_TextChanged"/>
+                                <TextBlock Style="{StaticResource Hint}" Text="All names go into one certificate (SAN). The first one is the main name. Up to 100 names."/>
+                            </StackPanel>
+
+                            <StackPanel x:Name="WildcardPanel" Visibility="Collapsed">
+                                <TextBlock Text="Base domain" Style="{StaticResource FieldLabel}" Margin="0,4,0,5"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Background="{StaticResource CardAltBrush}" BorderBrush="{StaticResource BorderStrongBrush}" BorderThickness="1,1,0,1"
+                                            CornerRadius="6,0,0,6" Padding="10,0">
+                                        <TextBlock Text="*." FontFamily="{StaticResource MonoFont}" VerticalAlignment="Center" Foreground="{StaticResource TextMutedBrush}" FontWeight="Bold"/>
+                                    </Border>
+                                    <TextBox x:Name="WildBaseBox" Grid.Column="1" FontFamily="{StaticResource MonoFont}" Tag="example.com" TextChanged="Domains_TextChanged"/>
+                                </Grid>
+                                <CheckBox x:Name="WildIncludeApex" IsChecked="True" Margin="0,12,0,0" Checked="Domains_Changed" Unchecked="Domains_Changed">
+                                    <TextBlock><Run Text="Also cover the bare domain"/> <Run x:Name="ApexRun" Text="(example.com)" Foreground="{StaticResource TextMutedBrush}"/></TextBlock>
+                                </CheckBox>
+                                <Border Background="{StaticResource AccentSoftBrush}" CornerRadius="6" Padding="12,9" Margin="0,12,0,0">
+                                    <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="#115E59">
+                                        A wildcard covers every first-level subdomain (www, mail, api…) but not the bare domain itself or deeper levels like a.b.example.com.
+                                        Let's Encrypt only allows DNS validation for wildcards.
+                                    </TextBlock>
+                                </Border>
+                            </StackPanel>
+
+                            <TextBlock Text="Display name" Style="{StaticResource FieldLabel}"/>
+                            <TextBox x:Name="NameBox" Tag="Defaults to the main domain"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Validation -->
+                    <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+                        <StackPanel>
+                            <TextBlock Text="2 · Validation method" Style="{StaticResource SectionTitle}"/>
+                            <RadioButton x:Name="MHttpSelf" Style="{StaticResource OptionCard}" GroupName="method" IsChecked="True" Checked="Method_Changed">
+                                <StackPanel>
+                                    <TextBlock Text="HTTP — built-in web server" FontWeight="SemiBold"/>
+                                    <TextBlock Style="{StaticResource Hint}" Text="Run this app on the server the domain points to. It briefly listens on port 80 (must be free and open to the internet)."/>
+                                </StackPanel>
+                            </RadioButton>
+                            <Grid x:Name="HttpPortPanel" Margin="30,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Port" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="{StaticResource TextMutedBrush}"/>
+                                <TextBox x:Name="PortBox" Grid.Column="1" Width="80" Text="80"/>
+                                <TextBlock Grid.Column="2" Style="{StaticResource Hint}" VerticalAlignment="Center" Margin="12,0,0,0" Text="Let's Encrypt always connects to port 80 — use another port only behind a port-forward."/>
+                            </Grid>
+
+                            <RadioButton x:Name="MHttpWebRoot" Style="{StaticResource OptionCard}" GroupName="method" Checked="Method_Changed">
+                                <StackPanel>
+                                    <TextBlock Text="HTTP — existing web site folder (IIS, Apache, nginx)" FontWeight="SemiBold"/>
+                                    <TextBlock Style="{StaticResource Hint}" Text="Writes the challenge file into .well-known/acme-challenge inside the site's root folder (local or UNC path)."/>
+                                </StackPanel>
+                            </RadioButton>
+                            <Grid x:Name="WebRootPanel" Margin="30,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="WebRootBox" Tag="C:\inetpub\wwwroot"/>
+                                <Button Grid.Column="1" Content="Browse…" Margin="8,0,0,0" Click="BrowseWebRoot_Click"/>
+                            </Grid>
+
+                            <RadioButton x:Name="MDnsManual" Style="{StaticResource OptionCard}" GroupName="method" Checked="Method_Changed">
+                                <StackPanel>
+                                    <TextBlock Text="DNS — manual TXT record" FontWeight="SemiBold"/>
+                                    <TextBlock Style="{StaticResource Hint}" Text="Works anywhere, including wildcards. The app shows the TXT records to add at your DNS provider and checks them before validating."/>
+                                </StackPanel>
+                            </RadioButton>
+
+                            <RadioButton x:Name="MDnsCloudflare" Style="{StaticResource OptionCard}" GroupName="method" Checked="Method_Changed">
+                                <StackPanel>
+                                    <TextBlock Text="DNS — Cloudflare (automatic)" FontWeight="SemiBold"/>
+                                    <TextBlock x:Name="CloudflareHint" Style="{StaticResource Hint}" Text="Creates and removes the TXT records through the Cloudflare API. Configure the API token in Settings."/>
+                                </StackPanel>
+                            </RadioButton>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Options -->
+                    <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+                        <StackPanel>
+                            <TextBlock Text="3 · Options" Style="{StaticResource SectionTitle}"/>
+
+                            <TextBlock Text="Let's Encrypt environment" Style="{StaticResource FieldLabel}" Margin="0,0,0,5"/>
+                            <Border Background="{StaticResource CardAltBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8" HorizontalAlignment="Left">
+                                <StackPanel Orientation="Horizontal">
+                                    <RadioButton x:Name="EnvStaging" Content="Staging (test)" Style="{StaticResource PillChoice}" GroupName="env" IsChecked="True"/>
+                                    <RadioButton x:Name="EnvProduction" Content="Production (trusted)" Style="{StaticResource PillChoice}" GroupName="env"/>
+                                </StackPanel>
+                            </Border>
+                            <TextBlock Style="{StaticResource Hint}" Text="Staging has generous rate limits but issues untrusted certificates — use it to test your setup, then switch to Production."/>
+
+                            <Grid Margin="0,4,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition Width="16"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="Key type" Style="{StaticResource FieldLabel}"/>
+                                    <ComboBox x:Name="KeyTypeBox">
+                                        <ComboBoxItem Content="RSA 2048 (most compatible)" Tag="Rsa2048"/>
+                                        <ComboBoxItem Content="RSA 3072" Tag="Rsa3072"/>
+                                        <ComboBoxItem Content="RSA 4096" Tag="Rsa4096"/>
+                                        <ComboBoxItem Content="ECDSA P-256 (fast, modern)" Tag="EcdsaP256"/>
+                                        <ComboBoxItem Content="ECDSA P-384" Tag="EcdsaP384"/>
+                                    </ComboBox>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Contact e-mail (optional)" Style="{StaticResource FieldLabel}"/>
+                                    <TextBox x:Name="EmailBox" Tag="you@example.com"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition Width="16"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="PFX password" Style="{StaticResource FieldLabel}"/>
+                                    <PasswordBox x:Name="PfxPwd"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Confirm password" Style="{StaticResource FieldLabel}"/>
+                                    <PasswordBox x:Name="PfxPwd2"/>
+                                </StackPanel>
+                            </Grid>
+                            <TextBlock x:Name="PwdHint" Style="{StaticResource Hint}" Text="Leave empty for a PFX without password. The password is stored encrypted with your Windows account so you can re-export later."/>
+                        </StackPanel>
+                    </Border>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,18,0,8">
+                        <Button x:Name="RequestBtn" Style="{StaticResource PrimaryButton}" Padding="20,10" Click="Request_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE8FB;" Style="{StaticResource Icon}" Margin="0,0,8,0"/>
+                                <TextBlock x:Name="RequestText" Text="Request certificate"/>
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="ResetBtn" Content="Clear form" Margin="10,0,0,0" Click="Reset_Click"/>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- ===== Progress ===== -->
+            <Border Grid.Column="2" Style="{StaticResource Card}" Padding="0">
+                <DockPanel>
+                    <Border DockPanel.Dock="Top" Padding="20,18,20,14" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                        <StackPanel>
+                            <Grid>
+                                <TextBlock Text="Progress" Style="{StaticResource SectionTitle}" Margin="0"/>
+                                <Border x:Name="StateBadge" CornerRadius="10" Padding="9,2" HorizontalAlignment="Right" Background="#F1F5F9">
+                                    <TextBlock x:Name="StateText" Text="Idle" FontSize="11" FontWeight="SemiBold" Foreground="#475569"/>
+                                </Border>
+                            </Grid>
+                            <TextBlock x:Name="SummaryText" Style="{StaticResource Hint}" Text="Summary of the request will appear here."/>
+                            <ProgressBar x:Name="Busy" IsIndeterminate="True" Margin="0,12,0,0" Visibility="Hidden"/>
+                        </StackPanel>
+                    </Border>
+                    <Border DockPanel.Dock="Bottom" Padding="16,12" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button x:Name="CancelBtn" Content="Cancel request" Style="{StaticResource DangerButton}" Click="Cancel_Click" IsEnabled="False"/>
+                            <Button x:Name="ViewCertBtn" Content="View certificate" Style="{StaticResource AccentButton}" Margin="8,0,0,0" Click="ViewCert_Click" Visibility="Collapsed"/>
+                        </StackPanel>
+                    </Border>
+                    <ScrollViewer x:Name="StepsScroll" VerticalScrollBarVisibility="Auto" Padding="20,12">
+                        <ItemsControl x:Name="StepsList">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition/>
+                                        </Grid.ColumnDefinitions>
+                                        <Ellipse Width="8" Height="8" Margin="0,5,10,0" VerticalAlignment="Top"
+                                                 Fill="{Binding Level, Converter={StaticResource LevelFg}}"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding Time}" FontFamily="{StaticResource MonoFont}" FontSize="11"
+                                                   Foreground="{StaticResource TextSubtleBrush}" Margin="0,1,10,0"/>
+                                        <TextBlock Grid.Column="2" Text="{Binding Message}" TextWrapping="Wrap" FontSize="12.5"
+                                                   Foreground="{StaticResource TextBrush}"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>
