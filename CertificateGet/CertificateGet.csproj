@@ -10,7 +10,13 @@
     <Product>CertificateGet</Product>
     <Description>Let's Encrypt certificate manager: request, store, export (PFX, CER, KEY, PEM) and log certificates, including wildcards.</Description>
     <Authors>Roberto Renz</Authors>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\app.ico" />
+    <None Remove="Assets\icon-256.png" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Certes" Version="4.0.0" />

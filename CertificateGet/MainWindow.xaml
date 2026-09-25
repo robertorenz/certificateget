@@ -1,6 +1,7 @@
 <Window x:Class="CertificateGet.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Icon="pack://application:,,,/Assets/app.ico"
         Title="CertificateGet — Let's Encrypt certificate manager"
         Width="1280" Height="820" MinWidth="1050" MinHeight="640"
         WindowStartupLocation="CenterScreen" FontFamily="Segoe UI"
