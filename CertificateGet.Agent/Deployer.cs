@@ -60,6 +60,7 @@ public static class Deployer
             var files = req.Files.ToDictionary(kv => kv.Key, kv => Convert.FromBase64String(kv.Value), StringComparer.OrdinalIgnoreCase);
             var stamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
             var services = new List<string>();
+            var programs = new List<ProgramSpec>();
             var commands = new List<(string Cmd, string Folder)>();
 
             foreach (var dest in slot.Destinations)
@@ -85,6 +86,7 @@ public static class Deployer
                         Ok($"{label}: wrote {string.Join(", ", dest.Files.Select(f => f.FileName))} to {dest.Folder}");
                     }
                     services.AddRange(dest.RestartServices);
+                    programs.AddRange(dest.RestartPrograms);
                     commands.AddRange(dest.Commands.Select(c => (c, dest.Folder)));
                 }
                 catch (Exception ex)
@@ -97,6 +99,17 @@ public static class Deployer
             {
                 try { Ok(await RestartServiceAsync(svc)); }
                 catch (Exception ex) { Fail($"Restart {svc}: {ex.Message}"); }
+            }
+
+            // Each program once, even when several destinations list it.
+            foreach (var prog in programs.GroupBy(p => Path.GetFullPath(p.Path), StringComparer.OrdinalIgnoreCase).Select(g => g.First()))
+            {
+                try
+                {
+                    if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException("RestartPrograms is Windows-only; use Commands on Linux.");
+                    Ok(await ProgramRestarter.RestartAsync(prog));
+                }
+                catch (Exception ex) { Fail($"Restart {Path.GetFileName(prog.Path)}: {ex.Message}"); }
             }
 
             foreach (var (cmd, folder) in commands.Concat(slot.Commands.Select(c => (c, ""))))

@@ -43,6 +43,7 @@ A **slot** is what a certificate in the app points to. Each slot has **destinati
 | `Folder` | Where the files go; created if it does not exist |
 | `Files` | List of `{ "Source": "...", "FileName": "..." }` |
 | `RestartServices` | Windows service names, or systemd units on Linux, restarted after writing. Each is restarted once, even when several destinations list it. |
+| `RestartPrograms` | Windows only: desktop programs (`.exe`) to close and start again. See below. |
 | `Commands` | Run after writing (`cmd.exe` on Windows, `/bin/sh` on Linux). `{folder}` is replaced with the destination folder. A non-zero exit code fails the step. |
 | `TsplusCertFolder` | TSplus only. Defaults to `C:\Program Files (x86)\TSplus\UserDesktop\files\cert` |
 
@@ -70,6 +71,36 @@ See [`examples/agent.windows.json`](examples/agent.windows.json) and [`examples/
 ### NetTalk
 
 NetTalk loads its certificate at start-up. Point a destination at each instance's certificate folder, write `fullchain` and `key` with the file names that instance is configured with, and list the instance's Windows service in `RestartServices`. If an instance runs as a desktop app rather than a service, use a `Commands` entry to restart it.
+
+### Programs that are not services (Windows)
+
+If an app runs as a normal program instead of a Windows service, add it under `RestartPrograms`:
+
+```json
+"RestartPrograms": [
+  { "Path": "C:\\Apps\\Api\\ApiServer.exe" }
+]
+```
+
+For each running copy of that exe, the agent:
+
+1. notes its exact command line and the user session (desktop) it is running in,
+2. asks it to close normally, like clicking its close button,
+3. ends it forcefully if it is still running after `StopTimeoutSeconds` (default 20),
+4. starts it again **on the same desktop, as the same user, with the same command line**,
+5. checks that it is still running 3 seconds later.
+
+Several copies of the same exe with different parameters each come back with their own parameters. Each program is restarted only once, even when several destinations list it.
+
+| Field | Default | Meaning |
+|---|---|---|
+| `Path` | (required) | Full path of the `.exe` |
+| `Arguments` | `""` | Used only when the program was **not** running, so there is no command line to reuse |
+| `WorkingFolder` | exe folder | Start-in folder for the new process |
+| `StopTimeoutSeconds` | `20` | How long to wait for a normal close |
+| `StartIn` | `SameSession` | `SameSession`: the desktop it was running on, or the console desktop if it was not running. `Console`: always the console desktop. `Background`: session 0 as the agent's account, with no visible window. |
+
+A user must be logged on, locally or through a disconnected RDP session, for the program to be started on a desktop. On servers that run such apps unattended, set up automatic logon, or use `Background` if the app does not need a visible window.
 
 ### TSplus
 

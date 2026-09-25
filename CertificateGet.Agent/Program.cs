@@ -245,6 +245,13 @@ static class Cli
                         if (string.IsNullOrWhiteSpace(f.FileName)) Bad($"{label}: a file has no FileName");
                     }
                 }
+                foreach (var prog in d.RestartPrograms)
+                {
+                    if (!OperatingSystem.IsWindows()) Bad($"{label}: RestartPrograms only works on Windows (use Commands)");
+                    else if (!File.Exists(prog.Path)) Bad($"{label}: program not found: {prog.Path}");
+                    if (prog.StartIn.ToLowerInvariant() is not ("samesession" or "console" or "background"))
+                        Bad($"{label}: StartIn must be SameSession, Console or Background (is \"{prog.StartIn}\")");
+                }
                 if (OperatingSystem.IsWindows())
                     foreach (var svc in d.RestartServices)
                         if (!ServiceExists(svc)) Bad($"{label}: Windows service \"{svc}\" not found");

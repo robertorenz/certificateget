@@ -124,6 +124,8 @@ public class Destination
     public List<FileSpec> Files { get; set; } = new();
     /// <summary>Windows service names (or systemd units on Linux) restarted after the files are written.</summary>
     public List<string> RestartServices { get; set; } = new();
+    /// <summary>Windows only: desktop programs (.exe) to close and start again on the same user's desktop.</summary>
+    public List<ProgramSpec> RestartPrograms { get; set; } = new();
     /// <summary>Commands run after the files are written (cmd.exe on Windows, /bin/sh on Linux).</summary>
     public List<string> Commands { get; set; } = new();
 }

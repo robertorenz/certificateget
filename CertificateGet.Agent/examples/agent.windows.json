@@ -35,7 +35,9 @@
             { "Source": "fullchain", "FileName": "api.crt" },
             { "Source": "key", "FileName": "api.key" }
           ],
-          "Commands": [ "taskkill /IM ApiServer.exe /F & start \"\" /D C:\\Apps\\Api ApiServer.exe" ]
+          "RestartPrograms": [
+            { "Path": "C:\\Apps\\Api\\ApiServer.exe", "StopTimeoutSeconds": 20 }
+          ]
         },
         {
           "Name": "TSplus web portal",
