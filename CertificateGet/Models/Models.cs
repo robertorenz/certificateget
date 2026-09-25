@@ -10,7 +10,8 @@ public enum ChallengeMethod
     HttpWebRoot,
     DnsManual,
     DnsCloudflare,
-    DnsHostinger
+    DnsHostinger,
+    DnsConstellix
 }
 
 public enum CertKeyType { Rsa2048, Rsa3072, Rsa4096, EcdsaP256, EcdsaP384 }
@@ -49,6 +50,7 @@ public class CertificateProfile
         ChallengeMethod.DnsManual => "DNS (manual)",
         ChallengeMethod.DnsCloudflare => "DNS (Cloudflare)",
         ChallengeMethod.DnsHostinger => "DNS (Hostinger)",
+        ChallengeMethod.DnsConstellix => "DNS (Constellix)",
         _ => Challenge.ToString()
     };
     [JsonIgnore] public int? DaysLeft => Latest == null ? null : (int)Math.Floor((Latest.NotAfter - DateTime.UtcNow).TotalDays);
@@ -109,6 +111,9 @@ public class AppSettings
     public string? ProtectedCloudflareToken { get; set; }
     /// <summary>Hostinger API token, DPAPI-protected.</summary>
     public string? ProtectedHostingerToken { get; set; }
+    /// <summary>Constellix API key and secret key, DPAPI-protected.</summary>
+    public string? ProtectedConstellixApiKey { get; set; }
+    public string? ProtectedConstellixSecretKey { get; set; }
     /// <summary>true = "BEGIN PRIVATE KEY" (PKCS#8); false = traditional "BEGIN RSA/EC PRIVATE KEY".</summary>
     public bool KeyFormatPkcs8 { get; set; } = true;
     /// <summary>true = 3DES/SHA1 PFX for old Windows Server / appliances; false = AES-256.</summary>

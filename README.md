@@ -7,7 +7,7 @@ A Windows desktop app (C# / WPF, .NET 9) that gets free TLS certificates from **
 ## Features
 
 - **Standard and wildcard certificates.** Wildcards (`*.example.com`) can also cover the bare domain.
-- **Five ways to validate:**
+- **Six ways to validate:**
   | Method | When to use it |
   |---|---|
   | HTTP, built-in web server | Run the app on the machine the domain points to; it briefly answers on port 80. No IIS needed. |
@@ -15,6 +15,7 @@ A Windows desktop app (C# / WPF, .NET 9) that gets free TLS certificates from **
   | DNS, manual | Works anywhere and is required for wildcards. The app shows the TXT records with copy buttons and checks public DNS before validating. |
   | DNS, Cloudflare | Creates and removes the TXT records for you through the Cloudflare API. |
 | DNS, Hostinger | Creates and removes the TXT records for you through the Hostinger API. |
+| DNS, Constellix | Creates and removes the TXT records for you through the Constellix API (v4, API key + secret key). |
 - **Every format, every time.** Each issuance writes:
   | File | Use |
   |---|---|
@@ -91,6 +92,10 @@ Create the token in Cloudflare under **My Profile → API Tokens → Create Toke
 
 In hPanel, open **Account** (profile icon) → **API** and create a token. Paste it in **Settings** and click **Test token**; it lists the domains the token can see. The domain must use Hostinger's name servers. The app adds its TXT values without touching other records, and removes only its own values afterwards.
 
+### Constellix keys
+
+In the Constellix portal, open **Edit My Account → API Keys** and create a key. Copy the **API key** and the **secret key**, which is shown when the key is created. Paste both in **Settings** and click **Test keys**; it lists the domains in the account. Requests are signed with the current time, so the PC clock must be correct. The app merges its values into an existing `_acme-challenge` record if there is one, and afterwards removes only its own values.
+
 ## Where things are stored
 
 Default location: `%LOCALAPPDATA%\CertificateGet\Store`. You can change it in Settings.
@@ -115,6 +120,7 @@ CertificateGet/
   Services/AcmeService.cs       ACME order workflow (Certes 4), all challenge types
   Services/ChallengeHelpers.cs  built-in HTTP-01 server, DNS checker, Cloudflare client, IDnsProvider
   Services/HostingerDns.cs      Hostinger DNS API client
+  Services/ConstellixDns.cs     Constellix DNS API v4 client (HMAC-signed requests)
   Services/DeployService.cs     deployment to SFTP servers and CertificateGet agents
 CertificateGet.Agent/           the server agent (ASP.NET Core minimal API, Windows service / systemd)
   Services/CertificateStore.cs  key/CSR generation, file writing (PFX via Pkcs12Builder), export, Windows store install

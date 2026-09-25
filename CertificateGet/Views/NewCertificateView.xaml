@@ -130,6 +130,13 @@
                                     <TextBlock x:Name="HostingerHint" Style="{StaticResource Hint}" Text="Creates and removes the TXT records through the Hostinger API. Configure the API token in Settings."/>
                                 </StackPanel>
                             </RadioButton>
+
+                            <RadioButton x:Name="MDnsConstellix" Style="{StaticResource OptionCard}" GroupName="method" Checked="Method_Changed">
+                                <StackPanel>
+                                    <TextBlock Text="DNS — Constellix (automatic)" FontWeight="SemiBold"/>
+                                    <TextBlock x:Name="ConstellixHint" Style="{StaticResource Hint}" Text="Creates and removes the TXT records through the Constellix API. Configure the API key and secret key in Settings."/>
+                                </StackPanel>
+                            </RadioButton>
                         </StackPanel>
                     </Border>
 

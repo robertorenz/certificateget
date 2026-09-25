@@ -96,7 +96,7 @@ public class AcmeService
 
     public async Task<IssuedCertificate> IssueAsync(string? pfxPassword, IIssueUi ui, CancellationToken ct)
     {
-        var isDns = _p.Challenge is ChallengeMethod.DnsManual or ChallengeMethod.DnsCloudflare or ChallengeMethod.DnsHostinger;
+        var isDns = _p.Challenge is ChallengeMethod.DnsManual or ChallengeMethod.DnsCloudflare or ChallengeMethod.DnsHostinger or ChallengeMethod.DnsConstellix;
         if (_p.IsWildcard && !isDns)
             throw new InvalidOperationException("Wildcard certificates can only be validated with a DNS challenge.");
 
@@ -131,7 +131,8 @@ public class AcmeService
                 case ChallengeMethod.HttpWebRoot: await RunHttpWebRoot(pending, ct); break;
                 case ChallengeMethod.DnsManual: await RunDnsManual(ctx, pending, ui, ct); break;
                 case ChallengeMethod.DnsCloudflare:
-                case ChallengeMethod.DnsHostinger: await RunDnsProvider(ctx, pending, ct); break;
+                case ChallengeMethod.DnsHostinger:
+                case ChallengeMethod.DnsConstellix: await RunDnsProvider(ctx, pending, ct); break;
             }
         }
 
@@ -281,6 +282,9 @@ public class AcmeService
                 ?? throw new InvalidOperationException("No Cloudflare API token configured. Add one in Settings.")),
             ChallengeMethod.DnsHostinger => new HostingerDns(Secret.Unprotect(s.ProtectedHostingerToken)
                 ?? throw new InvalidOperationException("No Hostinger API token configured. Add one in Settings.")),
+            ChallengeMethod.DnsConstellix => new ConstellixDns(
+                Secret.Unprotect(s.ProtectedConstellixApiKey) ?? throw new InvalidOperationException("No Constellix API key configured. Add it in Settings."),
+                Secret.Unprotect(s.ProtectedConstellixSecretKey) ?? throw new InvalidOperationException("No Constellix secret key configured. Add it in Settings.")),
             _ => throw new NotSupportedException($"{method} is not an automatic DNS provider.")
         };
     }

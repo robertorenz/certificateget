@@ -88,6 +88,7 @@ public partial class NewCertificateView : UserControl, IIssueUi
         MDnsManual.IsChecked = p.Challenge == ChallengeMethod.DnsManual;
         MDnsCloudflare.IsChecked = p.Challenge == ChallengeMethod.DnsCloudflare;
         MDnsHostinger.IsChecked = p.Challenge == ChallengeMethod.DnsHostinger;
+        MDnsConstellix.IsChecked = p.Challenge == ChallengeMethod.DnsConstellix;
         PortBox.Text = p.HttpPort.ToString();
         WebRootBox.Text = p.WebRootPath ?? "";
         EnvStaging.IsChecked = p.Environment == AcmeEnvironment.Staging;
@@ -147,6 +148,9 @@ public partial class NewCertificateView : UserControl, IIssueUi
         HostingerHint.Text = SettingsService.Current.ProtectedHostingerToken != null
             ? "Creates and removes the TXT records through the Hostinger API using the token saved in Settings."
             : "Creates and removes the TXT records through the Hostinger API. ⚠ No API token configured yet — add one in Settings.";
+        ConstellixHint.Text = SettingsService.Current.ProtectedConstellixApiKey != null && SettingsService.Current.ProtectedConstellixSecretKey != null
+            ? "Creates and removes the TXT records through the Constellix API using the keys saved in Settings."
+            : "Creates and removes the TXT records through the Constellix API. ⚠ No API key / secret key configured yet — add them in Settings.";
     }
 
     private void BrowseWebRoot_Click(object sender, RoutedEventArgs e)
@@ -219,6 +223,7 @@ public partial class NewCertificateView : UserControl, IIssueUi
             : MHttpWebRoot.IsChecked == true ? ChallengeMethod.HttpWebRoot
             : MDnsCloudflare.IsChecked == true ? ChallengeMethod.DnsCloudflare
             : MDnsHostinger.IsChecked == true ? ChallengeMethod.DnsHostinger
+            : MDnsConstellix.IsChecked == true ? ChallengeMethod.DnsConstellix
             : ChallengeMethod.DnsManual;
 
         if (domains.Any(d => d.StartsWith("*.")) && method is ChallengeMethod.HttpSelfHosted or ChallengeMethod.HttpWebRoot)
@@ -239,6 +244,12 @@ public partial class NewCertificateView : UserControl, IIssueUi
         if (method == ChallengeMethod.DnsCloudflare && SettingsService.Current.ProtectedCloudflareToken == null)
         {
             Modal.Warning("Cloudflare token missing", "Add your Cloudflare API token in Settings (it needs Zone:Read and DNS:Edit permissions).");
+            return null;
+        }
+        if (method == ChallengeMethod.DnsConstellix &&
+            (SettingsService.Current.ProtectedConstellixApiKey == null || SettingsService.Current.ProtectedConstellixSecretKey == null))
+        {
+            Modal.Warning("Constellix keys missing", "Add your Constellix API key and secret key in Settings (Constellix → Edit My Account → API Keys).");
             return null;
         }
         if (method == ChallengeMethod.DnsHostinger && SettingsService.Current.ProtectedHostingerToken == null)

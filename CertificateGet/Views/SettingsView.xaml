@@ -137,6 +137,25 @@
                             </Grid>
                             <TextBlock Style="{StaticResource Hint}" Text="Create a token in hPanel → Account (profile icon) → API. The domain must use Hostinger's name servers. Stored encrypted (DPAPI)."/>
 
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="Constellix API key" Style="{StaticResource FieldLabel}"/>
+                                    <PasswordBox x:Name="ConstellixApiKeyBox"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Constellix secret key" Style="{StaticResource FieldLabel}"/>
+                                    <PasswordBox x:Name="ConstellixSecretBox"/>
+                                </StackPanel>
+                                <Button Grid.Column="3" Content="Test keys" Margin="8,0,0,0" VerticalAlignment="Bottom" Click="TestConstellix_Click"/>
+                            </Grid>
+                            <TextBlock Style="{StaticResource Hint}" Text="In Constellix: Edit My Account → API Keys (the secret key is shown when the key is created). Requests are signed with the current time, so this PC's clock must be correct. Stored encrypted (DPAPI)."/>
+
                             <TextBlock Text="Public DNS resolvers used to check TXT records" Style="{StaticResource FieldLabel}"/>
                             <TextBox x:Name="ResolversBox" Tag="1.1.1.1, 8.8.8.8"/>
                             <TextBlock Text="Maximum wait for DNS propagation (seconds)" Style="{StaticResource FieldLabel}"/>

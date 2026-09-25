@@ -43,6 +43,8 @@ public partial class SettingsView : UserControl
         PfxAes.IsChecked = !s.PfxLegacyEncryption;
         CfTokenBox.Password = s.ProtectedCloudflareToken != null ? TokenUnchanged : "";
         HostingerTokenBox.Password = s.ProtectedHostingerToken != null ? TokenUnchanged : "";
+        ConstellixApiKeyBox.Password = s.ProtectedConstellixApiKey != null ? TokenUnchanged : "";
+        ConstellixSecretBox.Password = s.ProtectedConstellixSecretKey != null ? TokenUnchanged : "";
         ResolversBox.Text = s.DnsResolvers;
         var chosen = CertFileKind.ForIssuance().ToHashSet();
         _formatChoices = CertFileKind.All.Select(k => new FormatChoice
@@ -139,6 +141,35 @@ public partial class SettingsView : UserControl
         }
     }
 
+    private async void TestConstellix_Click(object sender, RoutedEventArgs e)
+    {
+        var apiKey = ConstellixApiKeyBox.Password == TokenUnchanged
+            ? Secret.Unprotect(SettingsService.Current.ProtectedConstellixApiKey)
+            : ConstellixApiKeyBox.Password.Trim();
+        var secret = ConstellixSecretBox.Password == TokenUnchanged
+            ? Secret.Unprotect(SettingsService.Current.ProtectedConstellixSecretKey)
+            : ConstellixSecretBox.Password.Trim();
+        if (string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(secret))
+        {
+            Modal.Warning("Keys missing", "Enter both the Constellix API key and the secret key.");
+            return;
+        }
+        try
+        {
+            using var c = new ConstellixDns(apiKey, secret);
+            var domains = await c.ListDomainsAsync();
+            if (domains.Count == 0)
+                Modal.Warning("Keys work, no domains", "Constellix accepted the keys, but no domains were found in this account.");
+            else
+                Modal.Success("Keys work", $"Constellix accepted the keys. Domains in this account ({domains.Count}):\n\n{string.Join("\n", domains.OrderBy(d => d).Take(40))}" +
+                                           (domains.Count > 40 ? $"\n… and {domains.Count - 40} more" : ""));
+        }
+        catch (Exception ex)
+        {
+            Modal.Error("Constellix test failed", ex.Message);
+        }
+    }
+
     private void ResetAccounts_Click(object sender, RoutedEventArgs e)
     {
         if (!Modal.Confirm("Reset Let's Encrypt accounts",
@@ -194,6 +225,12 @@ public partial class SettingsView : UserControl
             ProtectedHostingerToken = HostingerTokenBox.Password == TokenUnchanged
                 ? old.ProtectedHostingerToken
                 : Secret.Protect(HostingerTokenBox.Password.Trim()),
+            ProtectedConstellixApiKey = ConstellixApiKeyBox.Password == TokenUnchanged
+                ? old.ProtectedConstellixApiKey
+                : Secret.Protect(ConstellixApiKeyBox.Password.Trim()),
+            ProtectedConstellixSecretKey = ConstellixSecretBox.Password == TokenUnchanged
+                ? old.ProtectedConstellixSecretKey
+                : Secret.Protect(ConstellixSecretBox.Password.Trim()),
             IssueFormats = _formatChoices.Where(c => c.Selected && c.Editable).Select(c => c.Id).ToList(),
             DnsResolvers = string.Join(", ", resolvers),
             DnsPropagationTimeoutSeconds = prop
