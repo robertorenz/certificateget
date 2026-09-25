@@ -225,6 +225,10 @@
                                                         <Button Style="{StaticResource GhostButton}" Click="FileCopy_Click" ToolTip="Copy full path">
                                                             <TextBlock Text="&#xE8C8;" Style="{StaticResource Icon}"/>
                                                         </Button>
+                                                        <Button Style="{StaticResource GhostButton}" Click="FileBase64_Click"
+                                                                ToolTip="Copy file contents as a single Base64 line (Azure Key Vault, web panels, CI secrets)">
+                                                            <TextBlock Text="B64" FontSize="10" FontWeight="Bold"/>
+                                                        </Button>
                                                     </StackPanel>
                                                 </Grid>
                                             </Border>

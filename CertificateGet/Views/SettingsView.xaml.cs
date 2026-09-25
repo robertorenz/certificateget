@@ -11,6 +11,18 @@ namespace CertificateGet.Views;
 
 public partial class SettingsView : UserControl
 {
+    public class FormatChoice
+    {
+        public string Id { get; init; } = "";
+        public string Label { get; init; } = "";
+        public string Description { get; init; } = "";
+        public string FileName { get; init; } = "";
+        public bool Selected { get; set; }
+        public bool Editable { get; init; }
+    }
+
+    private List<FormatChoice> _formatChoices = new();
+
     private const string TokenUnchanged = "••••••••";
 
     public SettingsView() => InitializeComponent();
@@ -32,6 +44,13 @@ public partial class SettingsView : UserControl
         CfTokenBox.Password = s.ProtectedCloudflareToken != null ? TokenUnchanged : "";
         HostingerTokenBox.Password = s.ProtectedHostingerToken != null ? TokenUnchanged : "";
         ResolversBox.Text = s.DnsResolvers;
+        var chosen = CertFileKind.ForIssuance().ToHashSet();
+        _formatChoices = CertFileKind.All.Select(k => new FormatChoice
+        {
+            Id = k.Id, Label = k.Label, Description = k.Description, FileName = k.FileNamesDisplay("name"),
+            Selected = chosen.Contains(k.Id), Editable = !k.Required
+        }).ToList();
+        IssueFormatsList.ItemsSource = _formatChoices;
         PropagationBox.Text = s.DnsPropagationTimeoutSeconds.ToString();
         LoadAccounts();
     }
@@ -175,6 +194,7 @@ public partial class SettingsView : UserControl
             ProtectedHostingerToken = HostingerTokenBox.Password == TokenUnchanged
                 ? old.ProtectedHostingerToken
                 : Secret.Protect(HostingerTokenBox.Password.Trim()),
+            IssueFormats = _formatChoices.Where(c => c.Selected && c.Editable).Select(c => c.Id).ToList(),
             DnsResolvers = string.Join(", ", resolvers),
             DnsPropagationTimeoutSeconds = prop
         };

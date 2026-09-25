@@ -96,20 +96,25 @@ public partial class CertificatesView : UserControl
             var folder = CertificateStore.IssuanceFolder(p, latest);
             var b = CertificateStore.BaseFileName(p);
             FilesList.ItemsSource = CertFileKind.All
-                .Where(k => File.Exists(Path.Combine(folder, b + k.Suffix)))
-                .Select(k => new FileRow
+                .SelectMany(k => k.FileNames(b).Select(name => (k, name)))
+                .Where(x => File.Exists(Path.Combine(folder, x.name)))
+                .Select(x => new FileRow
                 {
-                    Name = b + k.Suffix,
-                    Ext = Path.GetExtension(k.Suffix).TrimStart('.').ToUpperInvariant(),
-                    Label = k.Label,
-                    Description = k.Description,
-                    FullPath = Path.Combine(folder, b + k.Suffix)
+                    Name = x.name,
+                    Ext = Path.GetExtension(x.name).TrimStart('.').ToUpperInvariant(),
+                    Label = x.k.Label,
+                    Description = x.k.Description,
+                    FullPath = Path.Combine(folder, x.name)
                 }).ToList();
-            NoFiles.Visibility = Visibility.Collapsed;
+            var missing = !File.Exists(Path.Combine(folder, b + CertFileKind.Key));
+            NoFiles.Text = "⚠ The stored files for this issuance are missing (moved or deleted outside the app). Click Renew to request new ones.";
+            NoFiles.Visibility = missing ? Visibility.Visible : Visibility.Collapsed;
+            ExportBtn.IsEnabled = InstallBtn.IsEnabled = !missing;
         }
         else
         {
             FilesList.ItemsSource = null;
+            NoFiles.Text = "This certificate has not been issued yet — click Renew to request it.";
             NoFiles.Visibility = Visibility.Visible;
         }
 
@@ -227,6 +232,13 @@ public partial class CertificatesView : UserControl
     private void FileCopy_Click(object sender, RoutedEventArgs e)
     {
         if (Ctx<FileRow>(sender) is { } f) Shell.CopyToClipboard(f.FullPath);
+    }
+
+    private void FileBase64_Click(object sender, RoutedEventArgs e)
+    {
+        if (Ctx<FileRow>(sender) is not { } f) return;
+        Shell.CopyToClipboard(Convert.ToBase64String(File.ReadAllBytes(f.FullPath)));
+        ActivityLog.Info("Store", $"Copied {f.Name} to the clipboard as Base64.", Selected?.Name);
     }
 
     private void HistoryOpen_Click(object sender, RoutedEventArgs e)

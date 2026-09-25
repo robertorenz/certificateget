@@ -25,6 +25,21 @@ A Windows desktop app (C# / WPF, .NET 9) that gets free TLS certificates from **
   | `name-combined.pem` | Full chain + private key in one file (HAProxy, Webmin, appliances) |
   | `name-chain.cer` | Intermediates only (Apache `SSLCertificateChainFile`) |
   | `name-der.cer` | Certificate only, binary DER (Java, some Windows tools) |
+
+  Optional formats, chosen in Settings (for every new certificate) or ticked in Export (any time):
+
+  | File | Use |
+  |---|---|
+  | `name.p7b` | PKCS#7: certificate + chain, no key (Windows intermediates, Java keytool, Tomcat, F5, Citrix, Palo Alto) |
+  | `cert.pem`, `privkey.pem`, `chain.pem`, `fullchain.pem` | Certbot-style names (Linux guides, Synology, Home Assistant, Proxmox, Docker) |
+  | `name-encrypted.key` | Private key encrypted with the PFX password (FortiGate, Sophos, Cisco, Apache with passphrase) |
+  | `name-fullchain-root.pem` | Full chain plus the ISRG root (devices that validate the whole chain) |
+  | `name-combined-keyfirst.pem` | Private key, then full chain (Postfix, lighttpd, Pound) |
+  | `name.p12` | Same as the PFX with a .p12 extension (Java/Tomcat, macOS, Android) |
+  | `name.crt` | Certificate only, PEM, .crt extension |
+  | `name-k8s-secret.yaml` | Kubernetes `kubernetes.io/tls` Secret |
+
+  Each file row on the Certificates page also has a **B64** button that copies the file as one Base64 line, for Azure Key Vault, web panels or CI secrets.
 - **Stored and ready to reuse.** Every certificate keeps its settings and full issuance history. **Renew** reuses the settings with one click. **Export** writes any formats to a folder and can set a new PFX password or none.
 - **Install in Windows.** Adds the certificate to the Local Machine or Current User store for IIS, RDP or SQL Server.
 - **Activity log.** Every request, challenge, validation, export, install and error is recorded with search, level filter and CSV export.

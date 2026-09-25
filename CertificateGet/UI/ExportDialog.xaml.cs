@@ -10,11 +10,11 @@ public partial class ExportDialog : Window
 {
     public class FormatOption
     {
-        public string Suffix { get; init; } = "";
+        public string Id { get; init; } = "";
         public string Label { get; init; } = "";
         public string Description { get; init; } = "";
         public string FileName { get; init; } = "";
-        public bool Selected { get; set; } = true;
+        public bool Selected { get; set; }
     }
 
     private readonly CertificateProfile _profile;
@@ -28,9 +28,11 @@ public partial class ExportDialog : Window
         _issued = issued;
         SubtitleText.Text = $"{profile.Name} · issued {issued.IssuedDisplay} · expires {issued.NotAfter.ToLocalTime():yyyy-MM-dd}";
         var b = CertificateStore.BaseFileName(profile);
+        var defaults = CertFileKind.ForIssuance().ToHashSet();
         _formats = CertFileKind.All.Select(k => new FormatOption
         {
-            Suffix = k.Suffix, Label = k.Label, Description = k.Description, FileName = b + k.Suffix
+            Id = k.Id, Label = k.Label, Description = k.Description, FileName = k.FileNamesDisplay(b),
+            Selected = defaults.Contains(k.Id)
         }).ToList();
         FormatsList.ItemsSource = _formats;
         FolderBox.Text = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), CertificateStore.SafeName(profile.Name));
@@ -55,7 +57,7 @@ public partial class ExportDialog : Window
 
     private void Export_Click(object sender, RoutedEventArgs e)
     {
-        var selected = _formats.Where(f => f.Selected).Select(f => f.Suffix).ToList();
+        var selected = _formats.Where(f => f.Selected).Select(f => f.Id).ToList();
         if (selected.Count == 0)
         {
             Modal.Warning("Nothing selected", "Choose at least one format to export.");
@@ -69,10 +71,13 @@ public partial class ExportDialog : Window
         var pwd = UseNewPwd.IsChecked == true ? NewPwd.Password : Secret.Unprotect(_profile.ProtectedPfxPassword);
         try
         {
-            var files = CertificateStore.Export(_profile, _issued, FolderBox.Text, selected, pwd);
+            var (files, notes) = CertificateStore.Export(_profile, _issued, FolderBox.Text, selected, pwd);
             ActivityLog.Success("Export", $"Exported {files.Count} file(s) to {FolderBox.Text}: {string.Join(", ", files)}", _profile.Name);
-            var r = Modal.Show("Export complete", $"{files.Count} file(s) written to:\n{FolderBox.Text}\n\n{string.Join("\n", files)}",
-                ModalKind.Success, new[] { "Open folder", "Close" });
+            foreach (var n in notes) ActivityLog.Warning("Export", n, _profile.Name);
+            var text = $"{files.Count} file(s) written to:\n{FolderBox.Text}\n\n{string.Join("\n", files)}" +
+                       (notes.Count > 0 ? "\n\nNot written:\n• " + string.Join("\n• ", notes) : "");
+            var r = Modal.Show(notes.Count > 0 ? "Export finished with notes" : "Export complete", text,
+                notes.Count > 0 ? ModalKind.Warning : ModalKind.Success, new[] { "Open folder", "Close" });
             if (r == "Open folder") Shell.OpenFolder(FolderBox.Text);
             DialogResult = true;
         }
@@ -81,6 +86,16 @@ public partial class ExportDialog : Window
             ActivityLog.Error("Export", $"Export failed: {ex.Message}", _profile.Name);
             Modal.Error("Export failed", ex.Message);
         }
+    }
+
+    private void SelectAll_Click(object sender, RoutedEventArgs e) => SetAll(true);
+    private void SelectNone_Click(object sender, RoutedEventArgs e) => SetAll(false);
+
+    private void SetAll(bool on)
+    {
+        foreach (var f in _formats) f.Selected = on;
+        FormatsList.ItemsSource = null;
+        FormatsList.ItemsSource = _formats;
     }
 
     private void Cancel_Click(object sender, RoutedEventArgs e) => DialogResult = false;

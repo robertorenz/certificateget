@@ -114,6 +114,8 @@ public class AppSettings
     public string DnsResolvers { get; set; } = "1.1.1.1, 8.8.8.8";
     public int DnsPropagationTimeoutSeconds { get; set; } = 600;
     public int RenewWarningDays { get; set; } = 30;
+    /// <summary>Format ids written for every new issuance; null = the built-in defaults.</summary>
+    public List<string>? IssueFormats { get; set; }
 }
 
 /// <summary>A TXT record Let's Encrypt wants to see for a DNS-01 challenge.</summary>

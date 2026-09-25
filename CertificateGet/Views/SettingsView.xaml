@@ -94,6 +94,26 @@
 
                     <Border Style="{StaticResource Card}" Margin="0,16,0,0">
                         <StackPanel>
+                            <TextBlock Text="Files written for new certificates" Style="{StaticResource SectionTitle}"/>
+                            <TextBlock Style="{StaticResource Hint}" Margin="0,-6,0,8"
+                                       Text="Greyed items are always kept: exports and renewals are rebuilt from them. Any format can still be produced later with Export."/>
+                            <ItemsControl x:Name="IssueFormatsList">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <CheckBox IsChecked="{Binding Selected}" IsEnabled="{Binding Editable}" Margin="0,4" ToolTip="{Binding Description}">
+                                            <TextBlock>
+                                                <Run Text="{Binding Label, Mode=OneWay}" FontWeight="SemiBold"/>
+                                                <Run Text="{Binding FileName, Mode=OneWay}" FontFamily="{StaticResource MonoFont}" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+                                            </TextBlock>
+                                        </CheckBox>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+                        <StackPanel>
                             <TextBlock Text="DNS" Style="{StaticResource SectionTitle}"/>
                             <TextBlock Text="Cloudflare API token" Style="{StaticResource FieldLabel}" Margin="0,0,0,5"/>
                             <Grid>
