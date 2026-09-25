@@ -96,7 +96,7 @@ public class AcmeService
 
     public async Task<IssuedCertificate> IssueAsync(string? pfxPassword, IIssueUi ui, CancellationToken ct)
     {
-        var isDns = _p.Challenge is ChallengeMethod.DnsManual or ChallengeMethod.DnsCloudflare;
+        var isDns = _p.Challenge is ChallengeMethod.DnsManual or ChallengeMethod.DnsCloudflare or ChallengeMethod.DnsHostinger;
         if (_p.IsWildcard && !isDns)
             throw new InvalidOperationException("Wildcard certificates can only be validated with a DNS challenge.");
 
@@ -130,7 +130,8 @@ public class AcmeService
                 case ChallengeMethod.HttpSelfHosted: await RunHttpSelfHosted(pending, ct); break;
                 case ChallengeMethod.HttpWebRoot: await RunHttpWebRoot(pending, ct); break;
                 case ChallengeMethod.DnsManual: await RunDnsManual(ctx, pending, ui, ct); break;
-                case ChallengeMethod.DnsCloudflare: await RunDnsCloudflare(ctx, pending, ct); break;
+                case ChallengeMethod.DnsCloudflare:
+                case ChallengeMethod.DnsHostinger: await RunDnsProvider(ctx, pending, ct); break;
             }
         }
 
@@ -271,26 +272,34 @@ public class AcmeService
         Step("You can now delete the _acme-challenge TXT records from your DNS.");
     }
 
-    private async Task RunDnsCloudflare(IAcmeContext ctx, List<PendingChallenge> pending, CancellationToken ct)
+    private static IDnsProvider CreateDnsProvider(ChallengeMethod method)
     {
-        var token = Secret.Unprotect(SettingsService.Current.ProtectedCloudflareToken)
-                    ?? throw new InvalidOperationException("No Cloudflare API token configured. Add one in Settings.");
+        var s = SettingsService.Current;
+        return method switch
+        {
+            ChallengeMethod.DnsCloudflare => new CloudflareDns(Secret.Unprotect(s.ProtectedCloudflareToken)
+                ?? throw new InvalidOperationException("No Cloudflare API token configured. Add one in Settings.")),
+            ChallengeMethod.DnsHostinger => new HostingerDns(Secret.Unprotect(s.ProtectedHostingerToken)
+                ?? throw new InvalidOperationException("No Hostinger API token configured. Add one in Settings.")),
+            _ => throw new NotSupportedException($"{method} is not an automatic DNS provider.")
+        };
+    }
+
+    private async Task RunDnsProvider(IAcmeContext ctx, List<PendingChallenge> pending, CancellationToken ct)
+    {
         var records = BuildDnsRecords(ctx, pending);
-        using var cf = new CloudflareDns(token);
+        using var dns = CreateDnsProvider(_p.Challenge);
         try
         {
-            foreach (var r in records)
-            {
-                await cf.CreateTxtAsync(r.RecordName, r.Value);
-                Step($"Cloudflare: created TXT {r.RecordName}");
-            }
+            await dns.AddTxtRecordsAsync(records);
+            foreach (var r in records) Step($"{dns.DisplayName}: created TXT {r.RecordName}");
             await WaitForPropagation(records, ct);
             await ValidateAll(pending, ct);
         }
         finally
         {
-            await cf.CleanupAsync();
-            Step("Cloudflare: removed challenge TXT records.");
+            await dns.CleanupAsync();
+            Step($"{dns.DisplayName}: removed challenge TXT records.");
         }
     }
 

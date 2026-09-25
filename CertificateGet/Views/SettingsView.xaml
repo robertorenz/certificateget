@@ -106,6 +106,17 @@
                             </Grid>
                             <TextBlock x:Name="CfHint" Style="{StaticResource Hint}" Text="Create a token in Cloudflare → My Profile → API Tokens with Zone:Read and DNS:Edit for your zones. Stored encrypted (DPAPI)."/>
 
+                            <TextBlock Text="Hostinger API token" Style="{StaticResource FieldLabel}"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <PasswordBox x:Name="HostingerTokenBox"/>
+                                <Button Grid.Column="1" Content="Test token" Margin="8,0,0,0" Click="TestHostinger_Click"/>
+                            </Grid>
+                            <TextBlock Style="{StaticResource Hint}" Text="Create a token in hPanel → Account (profile icon) → API. The domain must use Hostinger's name servers. Stored encrypted (DPAPI)."/>
+
                             <TextBlock Text="Public DNS resolvers used to check TXT records" Style="{StaticResource FieldLabel}"/>
                             <TextBox x:Name="ResolversBox" Tag="1.1.1.1, 8.8.8.8"/>
                             <TextBlock Text="Maximum wait for DNS propagation (seconds)" Style="{StaticResource FieldLabel}"/>

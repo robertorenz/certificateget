@@ -30,6 +30,7 @@ public partial class SettingsView : UserControl
         PfxLegacy.IsChecked = s.PfxLegacyEncryption;
         PfxAes.IsChecked = !s.PfxLegacyEncryption;
         CfTokenBox.Password = s.ProtectedCloudflareToken != null ? TokenUnchanged : "";
+        HostingerTokenBox.Password = s.ProtectedHostingerToken != null ? TokenUnchanged : "";
         ResolversBox.Text = s.DnsResolvers;
         PropagationBox.Text = s.DnsPropagationTimeoutSeconds.ToString();
         LoadAccounts();
@@ -78,6 +79,31 @@ public partial class SettingsView : UserControl
             var status = await cf.VerifyTokenAsync();
             if (status == "active") Modal.Success("Token works", "Cloudflare reports the token as active.");
             else Modal.Warning("Token not active", $"Cloudflare reports the token status as \"{status}\".");
+        }
+        catch (Exception ex)
+        {
+            Modal.Error("Token test failed", ex.Message);
+        }
+    }
+
+    private async void TestHostinger_Click(object sender, RoutedEventArgs e)
+    {
+        var token = HostingerTokenBox.Password == TokenUnchanged
+            ? Secret.Unprotect(SettingsService.Current.ProtectedHostingerToken)
+            : HostingerTokenBox.Password.Trim();
+        if (string.IsNullOrEmpty(token))
+        {
+            Modal.Warning("No token", "Paste a Hostinger API token first.");
+            return;
+        }
+        try
+        {
+            using var h = new HostingerDns(token);
+            var domains = await h.ListDomainsAsync();
+            if (domains.Count == 0)
+                Modal.Warning("Token works, no domains", "The token was accepted, but no domains were found in this Hostinger account.");
+            else
+                Modal.Success("Token works", $"Hostinger accepted the token. Domains in this account:\n\n{string.Join("\n", domains.OrderBy(d => d))}");
         }
         catch (Exception ex)
         {
@@ -137,6 +163,9 @@ public partial class SettingsView : UserControl
             ProtectedCloudflareToken = CfTokenBox.Password == TokenUnchanged
                 ? old.ProtectedCloudflareToken
                 : Secret.Protect(CfTokenBox.Password.Trim()),
+            ProtectedHostingerToken = HostingerTokenBox.Password == TokenUnchanged
+                ? old.ProtectedHostingerToken
+                : Secret.Protect(HostingerTokenBox.Password.Trim()),
             DnsResolvers = string.Join(", ", resolvers),
             DnsPropagationTimeoutSeconds = prop
         };

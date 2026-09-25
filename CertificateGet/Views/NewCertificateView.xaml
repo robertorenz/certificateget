@@ -123,6 +123,13 @@
                                     <TextBlock x:Name="CloudflareHint" Style="{StaticResource Hint}" Text="Creates and removes the TXT records through the Cloudflare API. Configure the API token in Settings."/>
                                 </StackPanel>
                             </RadioButton>
+
+                            <RadioButton x:Name="MDnsHostinger" Style="{StaticResource OptionCard}" GroupName="method" Checked="Method_Changed">
+                                <StackPanel>
+                                    <TextBlock Text="DNS — Hostinger (automatic)" FontWeight="SemiBold"/>
+                                    <TextBlock x:Name="HostingerHint" Style="{StaticResource Hint}" Text="Creates and removes the TXT records through the Hostinger API. Configure the API token in Settings."/>
+                                </StackPanel>
+                            </RadioButton>
                         </StackPanel>
                     </Border>
 

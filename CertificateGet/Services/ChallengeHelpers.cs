@@ -132,9 +132,24 @@ public static class DnsChecker
     }
 }
 
-/// <summary>Minimal Cloudflare DNS API client for creating/removing _acme-challenge TXT records.</summary>
-public sealed class CloudflareDns : IDisposable
+/// <summary>A DNS host whose API can create and remove the _acme-challenge TXT records.</summary>
+public interface IDnsProvider : IDisposable
 {
+    string DisplayName { get; }
+    Task AddTxtRecordsAsync(IList<Models.DnsTxtRecord> records);
+    Task CleanupAsync();
+}
+
+/// <summary>Minimal Cloudflare DNS API client for creating/removing _acme-challenge TXT records.</summary>
+public sealed class CloudflareDns : IDnsProvider
+{
+    public string DisplayName => "Cloudflare";
+
+    public async Task AddTxtRecordsAsync(IList<Models.DnsTxtRecord> records)
+    {
+        foreach (var r in records) await CreateTxtAsync(r.RecordName, r.Value);
+    }
+
     private readonly HttpClient _http;
     private readonly List<(string ZoneId, string RecordId)> _created = new();
 
