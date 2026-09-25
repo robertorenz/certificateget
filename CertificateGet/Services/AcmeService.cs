@@ -289,17 +289,20 @@ public class AcmeService
     {
         var records = BuildDnsRecords(ctx, pending);
         using var dns = CreateDnsProvider(_p.Challenge);
+        var added = false;
         try
         {
             await dns.AddTxtRecordsAsync(records);
+            added = true;
             foreach (var r in records) Step($"{dns.DisplayName}: created TXT {r.RecordName}");
             await WaitForPropagation(records, ct);
             await ValidateAll(pending, ct);
         }
         finally
         {
+            // Also runs after a partial add, so any record that did get created is removed.
             await dns.CleanupAsync();
-            Step($"{dns.DisplayName}: removed challenge TXT records.");
+            if (added) Step($"{dns.DisplayName}: removed challenge TXT records.");
         }
     }
 

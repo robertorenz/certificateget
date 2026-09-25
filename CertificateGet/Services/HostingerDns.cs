@@ -38,6 +38,25 @@ public sealed class HostingerDns : IDnsProvider
             .ToList();
     }
 
+    /// <summary>Checks, per domain, whether the token may read (and so edit) its DNS zone.</summary>
+    public async Task<List<(string Domain, bool Ok, string? Error)>> CheckDnsAccessAsync()
+    {
+        var result = new List<(string, bool, string?)>();
+        foreach (var d in await ListDomainsAsync())
+        {
+            try
+            {
+                await Send(HttpMethod.Get, $"dns/v1/zones/{d}", null);
+                result.Add((d, true, null));
+            }
+            catch (Exception ex)
+            {
+                result.Add((d, false, ex.Message.Replace("Hostinger API error: ", "")));
+            }
+        }
+        return result;
+    }
+
     private async Task<string> FindZoneAsync(string recordName)
     {
         var host = recordName.TrimEnd('.').ToLowerInvariant();
@@ -152,6 +171,9 @@ public sealed class HostingerDns : IDnsProvider
             if (json?["errors"] is JsonObject errs)
                 msg += " — " + string.Join("; ", errs.Select(e => $"{e.Key}: {string.Join(" ", (e.Value as JsonArray ?? new JsonArray()).Select(v => v?.ToString()))}"));
             if (resp.StatusCode == HttpStatusCode.Unauthorized) msg = "The API token was rejected (Unauthenticated). Create a new token in hPanel → Account → API.";
+            if (msg.Contains("DNS:4002"))
+                msg += ". Hostinger only lets a token edit DNS for domains owned by the account that created the token. " +
+                       "If you manage these domains through account sharing (delegated access), log in to the owner account and create the API token there.";
             throw new HostingerApiException(resp.StatusCode, $"Hostinger API error: {msg}");
         }
         return json;

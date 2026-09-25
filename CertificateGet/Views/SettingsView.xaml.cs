@@ -99,11 +99,20 @@ public partial class SettingsView : UserControl
         try
         {
             using var h = new HostingerDns(token);
-            var domains = await h.ListDomainsAsync();
-            if (domains.Count == 0)
+            var access = await h.CheckDnsAccessAsync();
+            var ok = access.Where(a => a.Ok).Select(a => a.Domain).OrderBy(d => d).ToList();
+            var bad = access.Where(a => !a.Ok).OrderBy(a => a.Domain).ToList();
+            if (access.Count == 0)
                 Modal.Warning("Token works, no domains", "The token was accepted, but no domains were found in this Hostinger account.");
+            else if (bad.Count == 0)
+                Modal.Success("Token works", $"Hostinger accepted the token and allows DNS editing for:\n\n{string.Join("\n", ok)}");
             else
-                Modal.Success("Token works", $"Hostinger accepted the token. Domains in this account:\n\n{string.Join("\n", domains.OrderBy(d => d))}");
+            {
+                var text = (ok.Count > 0 ? $"DNS editing allowed for:\n{string.Join("\n", ok)}\n\n" : "") +
+                           $"DNS editing refused for:\n{string.Join("\n", bad.Select(b => b.Domain))}\n\n" +
+                           $"Hostinger says: {bad[0].Error}";
+                Modal.Warning(ok.Count == 0 ? "Token cannot edit DNS" : "Token has partial DNS access", text);
+            }
         }
         catch (Exception ex)
         {
