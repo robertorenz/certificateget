@@ -40,8 +40,12 @@
           ]
         },
         {
-          "Name": "TSplus web portal",
+          "Name": "TSplus web portal (TSplus 15+: PFX import)",
           "Kind": "TSplus"
+        },
+        {
+          "Name": "TSplus web portal (older versions: cert.jks)",
+          "Kind": "TSplusJks"
         }
       ],
       "Commands": []

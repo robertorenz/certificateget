@@ -116,10 +116,13 @@ public class Slot
 public class Destination
 {
     public string Name { get; set; } = "";
-    /// <summary>"Files" (default): write the files below into Folder. "TSplus": import a PFX with TSplus's CertificateManager.</summary>
+    /// <summary>"Files" (default): write the files below into Folder. "TSplus": import a PFX with TSplus's CertificateManager (TSplus 15+).
+    /// "TSplusJks": write cert.jks into TSplus\Clients\webserver and restart the TSplus web server (versions that use cert.jks).</summary>
     public string Kind { get; set; } = "Files";
     /// <summary>TSplus only: its cert folder (default C:\Program Files (x86)\TSplus\UserDesktop\files\cert).</summary>
     public string? TsplusCertFolder { get; set; }
+    /// <summary>TSplusJks only: TSplus install folder (default C:\Program Files (x86)\TSplus).</summary>
+    public string? TsplusFolder { get; set; }
     public string Folder { get; set; } = "";
     public List<FileSpec> Files { get; set; } = new();
     /// <summary>Windows service names (or systemd units on Linux) restarted after the files are written.</summary>
@@ -132,7 +135,7 @@ public class Destination
 
 public class FileSpec
 {
-    /// <summary>combined, combined-keyfirst, fullchain, fullchain-root, cer, crt, der, chain, key, encrypted-key, pfx, p12, p7b, k8s</summary>
+    /// <summary>combined, combined-keyfirst, fullchain, fullchain-root, cer, crt, der, chain, key, encrypted-key, pfx, p12, p7b, k8s, jks</summary>
     public string Source { get; set; } = "";
     public string FileName { get; set; } = "";
 }

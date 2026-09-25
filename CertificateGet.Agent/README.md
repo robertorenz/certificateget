@@ -39,13 +39,14 @@ A **slot** is what a certificate in the app points to. Each slot has **destinati
 | Field | Meaning |
 |---|---|
 | `Name` | Label shown in the app's log |
-| `Kind` | `Files` (default) or `TSplus` |
+| `Kind` | `Files` (default), `TSplus` (TSplus 15+, PFX import) or `TSplusJks` (TSplus versions that use `cert.jks`) |
 | `Folder` | Where the files go; created if it does not exist |
 | `Files` | List of `{ "Source": "...", "FileName": "..." }` |
 | `RestartServices` | Windows service names, or systemd units on Linux, restarted after writing. Each is restarted once, even when several destinations list it. |
 | `RestartPrograms` | Windows only: desktop programs (`.exe`) to close and start again. See below. |
 | `Commands` | Run after writing (`cmd.exe` on Windows, `/bin/sh` on Linux). `{folder}` is replaced with the destination folder. A non-zero exit code fails the step. |
-| `TsplusCertFolder` | TSplus only. Defaults to `C:\Program Files (x86)\TSplus\UserDesktop\files\cert` |
+| `TsplusCertFolder` | `TSplus` only. Defaults to `C:\Program Files (x86)\TSplus\UserDesktop\files\cert` |
+| `TsplusFolder` | `TSplusJks` only. TSplus install folder, default `C:\Program Files (x86)\TSplus` |
 
 The slot's own `Commands` run once, after all destinations.
 
@@ -65,6 +66,7 @@ The slot's own `Commands` run once, after all destinations.
 | `encrypted-key` | Key encrypted with the PFX password |
 | `p7b` | PKCS#7 |
 | `k8s` | Kubernetes TLS secret |
+| `jks` | Java KeyStore (`cert.jks`), password from the app's Settings (default `secret`) |
 
 See [`examples/agent.windows.json`](examples/agent.windows.json) and [`examples/agent.linux-haproxy.json`](examples/agent.linux-haproxy.json).
 
@@ -110,7 +112,15 @@ Add a destination with `"Kind": "TSplus"`. The agent then:
 2. runs TSplus's `CertificateManager.exe /add <pfx>`,
 3. deletes both files.
 
-This requires TSplus 15 or later; older versions stored the certificate in `cert.jks` and are not supported. If the certificate has no PFX password in the app, the agent wraps the PFX with a random one, because TSplus needs a password.
+This requires TSplus 15 or later.
+
+For TSplus versions that use **`cert.jks`**, add `{ "Name": "TSplus", "Kind": "TSplusJks" }` instead. The agent then:
+
+1. backs up the current `C:\Program Files (x86)\TSplus\Clients\webserver\cert.jks`,
+2. writes the new `cert.jks` (JKS keystore, password `secret`, full chain),
+3. runs `UserDesktop\files\AdminTool.exe /webrestart` to restart the TSplus web server.
+
+Set `TsplusFolder` if TSplus is installed somewhere else. If the certificate has no PFX password in the app, the agent wraps the PFX with a random one, because TSplus needs a password.
 
 ### HAProxy
 

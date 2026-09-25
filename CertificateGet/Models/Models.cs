@@ -118,6 +118,8 @@ public class AppSettings
     public bool KeyFormatPkcs8 { get; set; } = true;
     /// <summary>true = 3DES/SHA1 PFX for old Windows Server / appliances; false = AES-256.</summary>
     public bool PfxLegacyEncryption { get; set; } = true;
+    /// <summary>Password of the JKS keystore and its key. TSplus requires "secret".</summary>
+    public string JksPassword { get; set; } = "secret";
     public string DnsResolvers { get; set; } = "1.1.1.1, 8.8.8.8";
     public int DnsPropagationTimeoutSeconds { get; set; } = 600;
     public int RenewWarningDays { get; set; } = 30;

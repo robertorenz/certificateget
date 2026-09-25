@@ -39,6 +39,7 @@ A Windows desktop app (C# / WPF, .NET 9) that gets free TLS certificates from **
   | `name.p12` | Same as the PFX with a .p12 extension (Java/Tomcat, macOS, Android) |
   | `name.crt` | Certificate only, PEM, .crt extension |
   | `name-k8s-secret.yaml` | Kubernetes `kubernetes.io/tls` Secret |
+  | `cert.jks` | Java KeyStore with key + full chain; password from Settings (default `secret`, which TSplus requires) |
 
   Each file row on the Certificates page also has a **B64** button that copies the file as one Base64 line, for Azure Key Vault, web panels or CI secrets.
 - **Stored and ready to reuse.** Every certificate keeps its settings and full issuance history. **Renew** reuses the settings with one click. **Export** writes any formats to a folder and can set a new PFX password or none.

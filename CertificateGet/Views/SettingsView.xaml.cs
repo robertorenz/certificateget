@@ -41,6 +41,7 @@ public partial class SettingsView : UserControl
         KeyTraditional.IsChecked = !s.KeyFormatPkcs8;
         PfxLegacy.IsChecked = s.PfxLegacyEncryption;
         PfxAes.IsChecked = !s.PfxLegacyEncryption;
+        JksPasswordBox.Text = s.JksPassword;
         CfTokenBox.Password = s.ProtectedCloudflareToken != null ? TokenUnchanged : "";
         HostingerTokenBox.Password = s.ProtectedHostingerToken != null ? TokenUnchanged : "";
         ConstellixApiKeyBox.Password = s.ProtectedConstellixApiKey != null ? TokenUnchanged : "";
@@ -219,6 +220,7 @@ public partial class SettingsView : UserControl
             RenewWarningDays = warn,
             KeyFormatPkcs8 = KeyPkcs8.IsChecked == true,
             PfxLegacyEncryption = PfxLegacy.IsChecked == true,
+            JksPassword = string.IsNullOrWhiteSpace(JksPasswordBox.Text) ? "secret" : JksPasswordBox.Text,
             ProtectedCloudflareToken = CfTokenBox.Password == TokenUnchanged
                 ? old.ProtectedCloudflareToken
                 : Secret.Protect(CfTokenBox.Password.Trim()),

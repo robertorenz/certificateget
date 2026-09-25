@@ -34,6 +34,7 @@ public static class CertFileKind
     public const string P12 = ".p12";
     public const string Crt = ".crt";
     public const string Kubernetes = "-k8s-secret.yaml";
+    public const string Jks = "cert.jks";
 
     private static CertFormat F(string suffix, string label, string desc, bool on = false, bool required = false, bool pwd = false) =>
         new(suffix, label, desc, b => new[] { b + suffix }, on, required, pwd);
@@ -56,6 +57,8 @@ public static class CertFileKind
         F(P12, "P12", "Same content as the PFX with a .p12 extension (Java/Tomcat keystores, macOS Keychain, Android)."),
         F(Crt, "CRT (PEM)", "The certificate only, PEM, with the .crt extension Linux and Apache use."),
         F(Kubernetes, "Kubernetes TLS secret", "YAML manifest with tls.crt (full chain) and tls.key, ready for kubectl apply."),
+        new(Jks, "JKS (TSplus cert.jks)", "Java KeyStore with the key and full chain; keystore and key password from Settings (default \"secret\", which TSplus requires). For TSplus copy it to TSplus\\Clients\\webserver and run AdminTool.exe /webrestart.",
+            _ => new[] { "cert.jks" }),
     };
 
     public static CertFormat Get(string id) => All.First(f => f.Id == id);
@@ -329,6 +332,20 @@ public static class CertificateStore
             }
         }
 
+        if (set.Contains(CertFileKind.Jks))
+        {
+            try
+            {
+                File.WriteAllBytes(Path.Combine(folder, "cert.jks"),
+                    BuildJks(leafPem, issuerPems, keyPem, SettingsService.Current.JksPassword, friendlyName));
+                written.Add("cert.jks");
+            }
+            catch (Exception ex)
+            {
+                notes.Add($"JKS not written: {ex.Message}");
+            }
+        }
+
         Put(CertFileKind.Kubernetes, f =>
         {
             var name = "tls-" + new string(b.ToLowerInvariant().Select(c => char.IsLetterOrDigit(c) ? c : '-').ToArray()).Trim('-');
@@ -339,6 +356,31 @@ public static class CertificateStore
             Text(f, yaml);
         });
         return (written, notes);
+    }
+
+    /// <summary>Java KeyStore (JKS) with one private-key entry holding the full chain; the same password protects store and key.</summary>
+    public static byte[] BuildJks(string leafPem, IEnumerable<string> issuerPems, string keyPem, string password, string friendlyName)
+    {
+        if (string.IsNullOrEmpty(password)) throw new InvalidOperationException("The JKS password in Settings is empty.");
+        var parser = new Org.BouncyCastle.X509.X509CertificateParser();
+        var chain = new[] { leafPem }.Concat(issuerPems).Select(pem =>
+        {
+            using var c = X509Certificate2.CreateFromPem(pem);
+            return parser.ReadCertificate(c.RawData);
+        }).ToArray();
+
+        using var leaf = X509Certificate2.CreateFromPem(leafPem);
+        using AsymmetricAlgorithm key = leaf.PublicKey.Oid.Value == "1.2.840.10045.2.1" ? ECDsa.Create() : RSA.Create();
+        key.ImportFromPem(keyPem);
+        var bcKey = Org.BouncyCastle.Security.PrivateKeyFactory.CreateKey(key.ExportPkcs8PrivateKey());
+
+        var alias = new string(SafeName(friendlyName).ToLowerInvariant().Select(c => char.IsLetterOrDigit(c) || c is '.' or '-' ? c : '-').ToArray()).Trim('-');
+        if (alias.Length == 0) alias = "certificate";
+        var store = new Org.BouncyCastle.Security.JksStore();
+        store.SetKeyEntry(alias, bcKey, password.ToCharArray(), chain);
+        using var ms = new MemoryStream();
+        store.Save(ms, password.ToCharArray());
+        return ms.ToArray();
     }
 
     private static byte[] BuildP7b(string leafPem, IEnumerable<string> issuerPems)

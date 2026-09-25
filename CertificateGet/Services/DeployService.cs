@@ -34,9 +34,10 @@ public static class DeployService
         ("p12", CertFileKind.P12, "P12"),
         ("p7b", CertFileKind.P7b, "P7B"),
         ("k8s", CertFileKind.Kubernetes, "Kubernetes secret"),
+        ("jks", CertFileKind.Jks, "JKS (Java keystore)"),
     };
 
-    private static readonly HashSet<string> SecretAliases = new() { "combined", "combined-keyfirst", "key", "encrypted-key", "pfx", "p12", "k8s" };
+    private static readonly HashSet<string> SecretAliases = new() { "combined", "combined-keyfirst", "key", "encrypted-key", "pfx", "p12", "k8s", "jks" };
 
     public static string FormatIdOf(string alias) =>
         Sources.FirstOrDefault(s => s.Alias == alias).FormatId ?? throw new InvalidOperationException($"Unknown file type \"{alias}\".");
@@ -104,7 +105,7 @@ public static class DeployService
         var (_, notes) = CertificateStore.Export(p, issued, temp, list.Select(FormatIdOf), pfxPassword);
         if (notes.Count > 0) throw new InvalidOperationException(string.Join(" ", notes));
         var b = CertificateStore.BaseFileName(p);
-        return list.ToDictionary(a => a, a => Path.Combine(temp, b + FormatIdOf(a)));
+        return list.ToDictionary(a => a, a => Path.Combine(temp, CertFileKind.Get(FormatIdOf(a)).FileNames(b)[0]));
     }
 
     // ---------------- SFTP ----------------

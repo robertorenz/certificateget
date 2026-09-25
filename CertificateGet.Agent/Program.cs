@@ -204,13 +204,13 @@ static class Cli
         {
             Console.WriteLine($"Slot \"{s.Name}\": {s.Destinations.Count} destination(s), needs {string.Join(", ", Deployer.RequiredFiles(s))}");
             foreach (var d in s.Destinations)
-                Console.WriteLine($"   - {d.Name}: {(d.Kind.Equals("TSplus", StringComparison.OrdinalIgnoreCase) ? "TSplus import" : d.Folder)}");
+                Console.WriteLine($"   - {d.Name}: {(d.Kind.Equals("TSplus", StringComparison.OrdinalIgnoreCase) ? "TSplus import" : d.Kind.Equals("TSplusJks", StringComparison.OrdinalIgnoreCase) ? "TSplus cert.jks" : d.Folder)}");
         }
         return 0;
     }
 
     private static readonly HashSet<string> KnownSources = new(StringComparer.OrdinalIgnoreCase)
-        { "combined", "combined-keyfirst", "fullchain", "fullchain-root", "cer", "crt", "der", "chain", "key", "encrypted-key", "pfx", "p12", "p7b", "k8s" };
+        { "combined", "combined-keyfirst", "fullchain", "fullchain-root", "cer", "crt", "der", "chain", "key", "encrypted-key", "pfx", "p12", "p7b", "k8s", "jks" };
 
     public static int Check()
     {
@@ -233,6 +233,12 @@ static class Cli
                 {
                     var folder = string.IsNullOrWhiteSpace(d.TsplusCertFolder) ? Deployer.DefaultTsplusCertFolder : d.TsplusCertFolder!;
                     if (!File.Exists(Path.Combine(folder, "CertificateManager.exe"))) Bad($"{label}: TSplus CertificateManager.exe not found in {folder}");
+                }
+                else if (d.Kind.Equals("TSplusJks", StringComparison.OrdinalIgnoreCase))
+                {
+                    var root = string.IsNullOrWhiteSpace(d.TsplusFolder) ? Deployer.DefaultTsplusFolder : d.TsplusFolder!;
+                    if (!Directory.Exists(Path.Combine(root, "Clients", "webserver"))) Bad($"{label}: TSplus web server folder not found: {Path.Combine(root, "Clients", "webserver")}");
+                    else if (!File.Exists(Path.Combine(root, "UserDesktop", "files", "AdminTool.exe"))) Console.WriteLine($"  ! {label}: AdminTool.exe not found — the web server will not be restarted automatically");
                 }
                 else
                 {

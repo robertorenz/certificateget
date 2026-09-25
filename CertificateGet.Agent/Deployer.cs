@@ -34,14 +34,16 @@ public class DeployResult
 public static class Deployer
 {
     public const string DefaultTsplusCertFolder = @"C:\Program Files (x86)\TSplus\UserDesktop\files\cert";
-    private static readonly HashSet<string> SecretAliases = new() { "combined", "combined-keyfirst", "key", "encrypted-key", "pfx", "p12", "k8s" };
+    public const string DefaultTsplusFolder = @"C:\Program Files (x86)\TSplus";
+    private static readonly HashSet<string> SecretAliases = new() { "combined", "combined-keyfirst", "key", "encrypted-key", "pfx", "p12", "k8s", "jks" };
     private static readonly SemaphoreSlim OneAtATime = new(1, 1);
 
     /// <summary>Every file type a slot needs, so the app sends exactly those.</summary>
     public static List<string> RequiredFiles(Slot slot) =>
-        slot.Destinations.SelectMany(d => d.Kind.Equals("TSplus", StringComparison.OrdinalIgnoreCase)
-                ? new[] { "pfx" }
-                : d.Files.Select(f => f.Source))
+        slot.Destinations.SelectMany(d =>
+                d.Kind.Equals("TSplus", StringComparison.OrdinalIgnoreCase) ? new[] { "pfx" } :
+                d.Kind.Equals("TSplusJks", StringComparison.OrdinalIgnoreCase) ? new[] { "jks" } :
+                d.Files.Select(f => f.Source))
             .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
 
     public static async Task<DeployResult> RunAsync(AgentConfig cfg, DeployRequest req)
@@ -71,6 +73,10 @@ public static class Deployer
                     if (dest.Kind.Equals("TSplus", StringComparison.OrdinalIgnoreCase))
                     {
                         Ok($"{label}: {await ImportTsplusAsync(dest, files, req.PfxPassword)}");
+                    }
+                    else if (dest.Kind.Equals("TSplusJks", StringComparison.OrdinalIgnoreCase))
+                    {
+                        Ok($"{label}: {await InstallTsplusJksAsync(cfg, slot, dest, files, stamp)}");
                     }
                     else
                     {
@@ -194,6 +200,26 @@ public static class Deployer
             try { File.Delete(pwdFile); } catch { }
             try { File.Delete(pfxPath); } catch { }
         }
+    }
+
+    /// <summary>TSplus versions using cert.jks: replace Clients\webserver\cert.jks and run AdminTool.exe /webrestart.</summary>
+    private static async Task<string> InstallTsplusJksAsync(AgentConfig cfg, Slot slot, Destination dest, Dictionary<string, byte[]> files, string stamp)
+    {
+        if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException("TSplus destinations only work on Windows.");
+        if (!files.TryGetValue("jks", out var jks)) throw new InvalidOperationException("the app did not send cert.jks");
+        var root = string.IsNullOrWhiteSpace(dest.TsplusFolder) ? DefaultTsplusFolder : dest.TsplusFolder!;
+        var webserver = Path.Combine(root, "Clients", "webserver");
+        if (!Directory.Exists(webserver)) throw new DirectoryNotFoundException($"TSplus web server folder not found: {webserver}");
+        var target = Path.Combine(webserver, "cert.jks");
+        Backup(cfg, slot, dest, target, stamp);
+        WriteAtomic(target, jks, secret: true);
+
+        var adminTool = Path.Combine(root, "UserDesktop", "files", "AdminTool.exe");
+        if (!File.Exists(adminTool))
+            return $"wrote {target}; AdminTool.exe not found at {adminTool} — restart the TSplus web server manually";
+        var (code, output) = await ExecAsync(adminTool, "/webrestart", TimeSpan.FromMinutes(3));
+        if (code != 0) throw new InvalidOperationException($"wrote {target}, but AdminTool.exe /webrestart exited with {code}: {output}");
+        return $"wrote {target} and restarted the TSplus web server";
     }
 
     private static async Task<string> RestartServiceAsync(string name)

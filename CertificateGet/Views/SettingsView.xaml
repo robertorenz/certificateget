@@ -88,6 +88,9 @@
                             <TextBlock Text="PFX encryption" Style="{StaticResource FieldLabel}" Margin="0,16,0,6"/>
                             <RadioButton x:Name="PfxLegacy" Content="3DES / SHA-1 — imports everywhere (Windows Server 2016, older appliances)" GroupName="pfx" Margin="0,0,0,6"/>
                             <RadioButton x:Name="PfxAes" Content="AES-256 / SHA-256 — stronger, needs Windows Server 2019+ / modern OpenSSL" GroupName="pfx"/>
+                            <TextBlock Text="JKS keystore password (cert.jks)" Style="{StaticResource FieldLabel}" Margin="0,16,0,5"/>
+                            <TextBox x:Name="JksPasswordBox" Width="200" HorizontalAlignment="Left" FontFamily="{StaticResource MonoFont}"/>
+                            <TextBlock Style="{StaticResource Hint}" Text="Used for both the keystore and the key. TSplus only accepts &quot;secret&quot;."/>
                             <TextBlock Style="{StaticResource Hint}" Margin="0,8,0,0" Text="Applies to newly issued certificates and exports. Existing files are unchanged — use Export to re-create them."/>
                         </StackPanel>
                     </Border>

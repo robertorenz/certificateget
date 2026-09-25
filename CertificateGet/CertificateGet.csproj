@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="BouncyCastle.Cryptography" Version="2.7.0" />
     <PackageReference Include="Certes" Version="4.0.0" />
     <PackageReference Include="DnsClient" Version="1.8.0" />
     <PackageReference Include="SSH.NET" Version="2026.0.0" />
