@@ -299,11 +299,20 @@ public partial class NewCertificateView : UserControl, IIssueUi
             var service = new AcmeService(p, (level, msg) => Dispatcher.Invoke(() => AddStep(level, msg)));
             var issued = await Task.Run(() => service.IssueAsync(pwd, this, _cts.Token));
             _lastIssuedProfile = p;
-            SetState("Issued", "ok");
+            var deployText = "";
+            var autoTargets = p.Targets.Count(t => t.Enabled && t.AutoDeploy);
+            if (autoTargets > 0)
+            {
+                AddStep(LogLevel.Info, $"Deploying to {autoTargets} target(s)…");
+                var (ok, failed) = await DeployService.DeployAllAsync(p, automaticOnly: true,
+                    (level, msg) => Dispatcher.Invoke(() => AddStep(level, msg)), new ModalDeployUi());
+                deployText = $"\n\nDeployment: {ok} target(s) OK" + (failed > 0 ? $", {failed} FAILED — see the progress log." : ".");
+            }
+            SetState(deployText.Contains("FAILED") ? "Issued, deploy failed" : "Issued", deployText.Contains("FAILED") ? "warn" : "ok");
             ViewCertBtn.Visibility = Visibility.Visible;
             var r = Modal.Show("Certificate issued",
-                $"{p.Name}\nValid until {issued.NotAfter.ToLocalTime():yyyy-MM-dd HH:mm}\n\nFiles saved:\n{string.Join("\n", issued.Files)}",
-                ModalKind.Success, new[] { "View certificate", "Open folder", "Close" });
+                $"{p.Name}\nValid until {issued.NotAfter.ToLocalTime():yyyy-MM-dd HH:mm}\n\nFiles saved:\n{string.Join("\n", issued.Files)}{deployText}",
+                deployText.Contains("FAILED") ? ModalKind.Warning : ModalKind.Success, new[] { "View certificate", "Open folder", "Close" });
             if (r == "View certificate") MainWindow.Instance?.ShowCertificates(p.Id);
             else if (r == "Open folder") Shell.OpenFolder(CertificateStore.IssuanceFolder(p, issued));
         }

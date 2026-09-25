@@ -1,0 +1,24 @@
+{
+  "Port": 9443,
+  "ApiKeyHash": "(created by: sudo ./CertificateGet.Agent install)",
+  "AllowedIps": [],
+  "TlsPfx": "agent-tls.pfx",
+  "TlsPassword": "(created automatically)",
+  "KeepBackups": 5,
+  "Slots": [
+    {
+      "Name": "reddin-wildcard",
+      "Description": "HAProxy edge: combined PEM in the crt directory",
+      "Destinations": [
+        {
+          "Name": "HAProxy",
+          "Folder": "/etc/haproxy/certs",
+          "Files": [
+            { "Source": "combined", "FileName": "reddinassessments.com.pem" }
+          ]
+        }
+      ],
+      "Commands": [ "haproxy -c -f /etc/haproxy/haproxy.cfg && systemctl reload haproxy" ]
+    }
+  ]
+}

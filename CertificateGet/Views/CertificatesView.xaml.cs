@@ -19,6 +19,7 @@ public partial class CertificatesView : UserControl
     }
 
     private List<CertificateProfile> _all = new();
+    private bool _deploying;
 
     public CertificatesView()
     {
@@ -124,6 +125,10 @@ public partial class CertificatesView : UserControl
             : "The PFX has no password.";
         ShowPwdBtn.Visibility = hasPwd ? Visibility.Visible : Visibility.Collapsed;
         HistoryList.ItemsSource = p.History.OrderByDescending(h => h.IssuedUtc).ToList();
+        TargetsList.ItemsSource = null;
+        TargetsList.ItemsSource = p.Targets;
+        NoTargets.Visibility = p.Targets.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        DeployAllBtn.IsEnabled = p.Targets.Count > 0 && latest != null && !_deploying;
     }
 
     private void AddInfo(string label, string value, bool mono = false)
@@ -239,6 +244,80 @@ public partial class CertificatesView : UserControl
         if (Ctx<FileRow>(sender) is not { } f) return;
         Shell.CopyToClipboard(Convert.ToBase64String(File.ReadAllBytes(f.FullPath)));
         ActivityLog.Info("Store", $"Copied {f.Name} to the clipboard as Base64.", Selected?.Name);
+    }
+
+    // ---------- deployment ----------
+
+    private void AddTarget_Click(object sender, RoutedEventArgs e)
+    {
+        if (Selected is not { } p) return;
+        var dlg = new DeployTargetDialog(p, null);
+        if (Modal.ShowWindow(dlg) != true || dlg.Result == null) return;
+        p.Targets.Add(dlg.Result);
+        CertificateStore.Save(p);
+        ActivityLog.Info("Deploy", $"Added deployment target \"{dlg.Result.Name}\" ({dlg.Result.TypeDisplay}).", p.Name);
+    }
+
+    private void EditTarget_Click(object sender, RoutedEventArgs e)
+    {
+        if (Selected is not { } p || Ctx<DeployTarget>(sender) is not { } t) return;
+        if (Modal.ShowWindow(new DeployTargetDialog(p, t)) != true) return;
+        CertificateStore.Save(p);
+        ActivityLog.Info("Deploy", $"Updated deployment target \"{t.Name}\".", p.Name);
+    }
+
+    private void RemoveTarget_Click(object sender, RoutedEventArgs e)
+    {
+        if (Selected is not { } p || Ctx<DeployTarget>(sender) is not { } t) return;
+        if (!Modal.Confirm("Remove target", $"Stop deploying \"{p.Name}\" to \"{t.Name}\"?\n\nNothing is removed from the server.", "Remove", "Cancel", danger: true)) return;
+        p.Targets.Remove(t);
+        CertificateStore.Save(p);
+        ActivityLog.Warning("Deploy", $"Removed deployment target \"{t.Name}\".", p.Name);
+    }
+
+    private async void DeployAll_Click(object sender, RoutedEventArgs e)
+    {
+        if (Selected is not { Latest: not null } p) return;
+        var targets = p.Targets.Where(t => t.Enabled).ToList();
+        if (targets.Count == 0) { Modal.Info("Nothing to deploy", "All targets of this certificate are disabled."); return; }
+        if (!Modal.Confirm("Deploy certificate",
+                $"Push the current certificate of \"{p.Name}\" (expires {p.Latest.NotAfter.ToLocalTime():yyyy-MM-dd}) to:\n\n" +
+                string.Join("\n", targets.Select(t => "• " + t.Name)) + "\n\nServices on those servers may be restarted.", "Deploy", "Cancel"))
+            return;
+        await RunDeploy(p, targets);
+    }
+
+    private async void DeployOne_Click(object sender, RoutedEventArgs e)
+    {
+        if (Selected is not { Latest: not null } p || Ctx<DeployTarget>(sender) is not { } t) return;
+        if (!Modal.Confirm("Deploy certificate", $"Push the current certificate of \"{p.Name}\" to \"{t.Name}\" now?", "Deploy", "Cancel")) return;
+        await RunDeploy(p, new List<DeployTarget> { t });
+    }
+
+    private async Task RunDeploy(CertificateProfile p, List<DeployTarget> targets)
+    {
+        _deploying = true;
+        DeployAllBtn.IsEnabled = false;
+        var lines = new List<string>();
+        int ok = 0, failed = 0;
+        try
+        {
+            foreach (var t in targets)
+            {
+                var success = await DeployService.DeployAsync(p, p.Latest!, t,
+                    (level, msg) => Dispatcher.Invoke(() => lines.Add((level == LogLevel.Error ? "✗ " : level == LogLevel.Warning ? "! " : "• ") + msg)),
+                    new ModalDeployUi());
+                if (success) ok++; else failed++;
+            }
+        }
+        finally
+        {
+            _deploying = false;
+            Reload(p.Id);
+        }
+        Modal.Show(failed == 0 ? "Deployment finished" : "Deployment finished with errors",
+            $"{ok} target(s) OK, {failed} failed.\n\n" + string.Join("\n", lines),
+            failed == 0 ? ModalKind.Success : ModalKind.Warning, new[] { "Close" });
     }
 
     private void HistoryOpen_Click(object sender, RoutedEventArgs e)

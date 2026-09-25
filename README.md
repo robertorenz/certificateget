@@ -42,6 +42,9 @@ A Windows desktop app (C# / WPF, .NET 9) that gets free TLS certificates from **
   Each file row on the Certificates page also has a **B64** button that copies the file as one Base64 line, for Azure Key Vault, web panels or CI secrets.
 - **Stored and ready to reuse.** Every certificate keeps its settings and full issuance history. **Renew** reuses the settings with one click. **Export** writes any formats to a folder and can set a new PFX password or none.
 - **Install in Windows.** Adds the certificate to the Local Machine or Current User store for IIS, RDP or SQL Server.
+- **Deployment to your servers.** Each certificate can have deployment targets. After every issuance or renewal the app pushes the new files automatically; there is also a **Deploy now** button.
+  - **CertificateGet Agent**: a small Windows or Linux service ([CertificateGet.Agent](CertificateGet.Agent/README.md)). It writes the files into any number of folders with the names each app instance expects, restarts services or runs commands, imports into **TSplus**, and keeps backups. Suited to NetTalk, TSplus and HAProxy servers.
+  - **SFTP / SSH**: uploads files atomically and runs a command such as `haproxy -c … && systemctl reload haproxy`. Nothing to install on the server; presets for HAProxy and nginx.
 - **Activity log.** Every request, challenge, validation, export, install and error is recorded with search, level filter and CSV export.
 - **Staging and Production.** Test against Let's Encrypt staging without hitting rate limits, then switch to Production.
 - **Secrets protected.** PFX passwords, ACME account keys and the Cloudflare token are encrypted with Windows DPAPI for your user account.
@@ -60,11 +63,13 @@ A Windows desktop app (C# / WPF, .NET 9) that gets free TLS certificates from **
 dotnet run --project CertificateGet
 ```
 
-Self-contained, compressed single-file build in `.\run` (no .NET runtime needed on the target machine, about 62 MB):
+Self-contained, compressed single-file builds in `.\run`. No .NET runtime is needed on the target machines.
 
 ```powershell
 .\publish.ps1
-.\run\CertificateGet.exe
+# run\CertificateGet.exe                      desktop app
+# run\agent-windows\CertificateGet.Agent.exe  agent for Windows servers
+# run\agent-linux\CertificateGet.Agent        agent for Linux servers
 ```
 
 Run it **as administrator** when you want to install into the Local Machine certificate store, or when you write into a web root that only admins can modify.
@@ -110,6 +115,8 @@ CertificateGet/
   Services/AcmeService.cs       ACME order workflow (Certes 4), all challenge types
   Services/ChallengeHelpers.cs  built-in HTTP-01 server, DNS checker, Cloudflare client, IDnsProvider
   Services/HostingerDns.cs      Hostinger DNS API client
+  Services/DeployService.cs     deployment to SFTP servers and CertificateGet agents
+CertificateGet.Agent/           the server agent (ASP.NET Core minimal API, Windows service / systemd)
   Services/CertificateStore.cs  key/CSR generation, file writing (PFX via Pkcs12Builder), export, Windows store install
   Services/AppServices.cs       settings, DPAPI helpers, activity log
   Views/                        Certificates, New certificate, Activity log, Settings pages

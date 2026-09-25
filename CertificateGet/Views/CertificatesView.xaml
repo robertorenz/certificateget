@@ -243,6 +243,77 @@
 
                         <Border Style="{StaticResource Card}" Margin="0,16,0,0">
                             <StackPanel>
+                                <Grid Margin="0,0,0,10">
+                                    <TextBlock Text="Deployment" Style="{StaticResource SectionTitle}" Margin="0" VerticalAlignment="Center"/>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <Button Click="AddTarget_Click" Margin="0,0,8,0" Padding="10,5">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="&#xE710;" Style="{StaticResource Icon}" Margin="0,0,6,0" FontSize="11"/>
+                                                <TextBlock Text="Add target"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button x:Name="DeployAllBtn" Style="{StaticResource AccentButton}" Click="DeployAll_Click" Padding="10,5">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="&#xE898;" Style="{StaticResource Icon}" Margin="0,0,6,0"/>
+                                                <TextBlock Text="Deploy now"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                </Grid>
+                                <TextBlock x:Name="NoTargets" Style="{StaticResource Hint}" Margin="0"
+                                           Text="No targets yet. Add a CertificateGet Agent (Windows/Linux service that places the files in one or more folders, restarts services, imports into TSplus) or an SFTP server (e.g. HAProxy)."/>
+                                <ItemsControl x:Name="TargetsList">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="0,9">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Border Width="34" Height="34" CornerRadius="8" Background="{StaticResource AccentSoftBrush}" Margin="0,0,12,0" VerticalAlignment="Top">
+                                                        <TextBlock x:Name="TIcon" Text="&#xE968;" Style="{StaticResource Icon}" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Center"/>
+                                                    </Border>
+                                                    <StackPanel Grid.Column="1">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13"/>
+                                                            <TextBlock Text="{Binding TypeDisplay}" FontSize="11" Foreground="{StaticResource TextMutedBrush}" Margin="8,2,0,0"/>
+                                                        </StackPanel>
+                                                        <TextBlock Text="{Binding Endpoint}" FontFamily="{StaticResource MonoFont}" FontSize="11" Foreground="{StaticResource TextMutedBrush}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                                                        <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                                                            <Border CornerRadius="9" Padding="7,1" Background="{Binding LastLevel, Converter={StaticResource LevelBg}}" ToolTip="{Binding LastMessage}">
+                                                                <TextBlock Text="{Binding LastDisplay}" FontSize="10.5" FontWeight="SemiBold" Foreground="{Binding LastLevel, Converter={StaticResource LevelFg}}"/>
+                                                            </Border>
+                                                            <TextBlock Text="{Binding OptionsDisplay}" FontSize="11" Foreground="{StaticResource TextMutedBrush}" Margin="8,1,0,0"/>
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <Button Style="{StaticResource GhostButton}" Click="DeployOne_Click" ToolTip="Deploy to this target now">
+                                                            <TextBlock Text="&#xE898;" Style="{StaticResource Icon}"/>
+                                                        </Button>
+                                                        <Button Style="{StaticResource GhostButton}" Click="EditTarget_Click" ToolTip="Edit">
+                                                            <TextBlock Text="&#xE70F;" Style="{StaticResource Icon}"/>
+                                                        </Button>
+                                                        <Button Style="{StaticResource GhostButton}" Click="RemoveTarget_Click" ToolTip="Remove">
+                                                            <TextBlock Text="&#xE74D;" Style="{StaticResource Icon}"/>
+                                                        </Button>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                            <DataTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding Type}" Value="Sftp">
+                                                    <Setter TargetName="TIcon" Property="Text" Value="&#xE8A7;"/>
+                                                </DataTrigger>
+                                            </DataTemplate.Triggers>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+                            <StackPanel>
                                 <TextBlock Text="Issuance history" Style="{StaticResource SectionTitle}"/>
                                 <ItemsControl x:Name="HistoryList">
                                     <ItemsControl.ItemTemplate>

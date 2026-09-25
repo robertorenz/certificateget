@@ -1,0 +1,48 @@
+{
+  "Port": 9443,
+  "ApiKeyHash": "(created by: CertificateGet.Agent.exe install)",
+  "AllowedIps": [ "192.168.1.50" ],
+  "TlsPfx": "agent-tls.pfx",
+  "TlsPassword": "(created automatically)",
+  "KeepBackups": 5,
+  "Slots": [
+    {
+      "Name": "reddin-wildcard",
+      "Description": "*.reddinassessments.com for every NetTalk instance and TSplus on this server",
+      "Destinations": [
+        {
+          "Name": "NetTalk - Assessments",
+          "Folder": "C:\\Apps\\Assessments\\certificates",
+          "Files": [
+            { "Source": "fullchain", "FileName": "reddinassessments.com.crt" },
+            { "Source": "key", "FileName": "reddinassessments.com.key" }
+          ],
+          "RestartServices": [ "AssessmentsWeb" ]
+        },
+        {
+          "Name": "NetTalk - Portal",
+          "Folder": "D:\\Portal\\certs",
+          "Files": [
+            { "Source": "fullchain", "FileName": "portal.crt" },
+            { "Source": "key", "FileName": "portal.key" }
+          ],
+          "RestartServices": [ "PortalWeb" ]
+        },
+        {
+          "Name": "NetTalk - API (desktop app, not a service)",
+          "Folder": "C:\\Apps\\Api\\certificates",
+          "Files": [
+            { "Source": "fullchain", "FileName": "api.crt" },
+            { "Source": "key", "FileName": "api.key" }
+          ],
+          "Commands": [ "taskkill /IM ApiServer.exe /F & start \"\" /D C:\\Apps\\Api ApiServer.exe" ]
+        },
+        {
+          "Name": "TSplus web portal",
+          "Kind": "TSplus"
+        }
+      ],
+      "Commands": []
+    }
+  ]
+}

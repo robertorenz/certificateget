@@ -35,6 +35,8 @@ public class CertificateProfile
     public string? ProtectedPfxPassword { get; set; }
     public DateTime CreatedUtc { get; set; } = DateTime.UtcNow;
     public List<IssuedCertificate> History { get; set; } = new();
+    /// <summary>Servers this certificate is pushed to after issuance or on demand.</summary>
+    public List<DeployTarget> Targets { get; set; } = new();
 
     [JsonIgnore] public IssuedCertificate? Latest => History.OrderByDescending(h => h.IssuedUtc).FirstOrDefault();
     [JsonIgnore] public bool IsWildcard => Domains.Any(d => d.StartsWith("*."));
@@ -126,4 +128,63 @@ public class DnsTxtRecord
     public string Value { get; set; } = "";
     public bool Found { get; set; }
     [JsonIgnore] public string FoundDisplay => Found ? "Visible" : "Not yet visible";
+}
+
+
+public enum DeployType { Sftp, Agent }
+
+/// <summary>One file to upload: which generated format, and the name it gets on the server.</summary>
+public class DeployFile
+{
+    /// <summary>Format alias, e.g. "combined", "fullchain", "key" (see DeployService.Sources).</summary>
+    public string Source { get; set; } = "combined";
+    /// <summary>Remote file name; {domain} and {name} are replaced.</summary>
+    public string RemoteName { get; set; } = "{domain}.pem";
+}
+
+/// <summary>A server a certificate is deployed to.</summary>
+public class DeployTarget
+{
+    public string Id { get; set; } = Guid.NewGuid().ToString("N")[..10];
+    public string Name { get; set; } = "";
+    public DeployType Type { get; set; } = DeployType.Sftp;
+    public bool Enabled { get; set; } = true;
+    /// <summary>Deploy automatically right after each issuance/renewal.</summary>
+    public bool AutoDeploy { get; set; } = true;
+
+    // SFTP / SSH
+    public string Host { get; set; } = "";
+    public int Port { get; set; } = 22;
+    public string Username { get; set; } = "";
+    public bool UseKeyAuth { get; set; }
+    public string? ProtectedPassword { get; set; }
+    public string? PrivateKeyPath { get; set; }
+    public string? ProtectedKeyPassphrase { get; set; }
+    /// <summary>SHA-256 host key fingerprint accepted on first connect.</summary>
+    public string? HostKeyFingerprint { get; set; }
+    public string RemoteFolder { get; set; } = "";
+    public List<DeployFile> Files { get; set; } = new();
+    public string? PostCommand { get; set; }
+
+    // CertificateGet Agent
+    public string AgentUrl { get; set; } = "";
+    public string? ProtectedApiKey { get; set; }
+    /// <summary>SHA-256 of the agent's TLS certificate, accepted on first connect.</summary>
+    public string? AgentFingerprint { get; set; }
+    public string AgentSlot { get; set; } = "";
+
+    // Last result
+    public DateTime? LastDeployUtc { get; set; }
+    public bool? LastSuccess { get; set; }
+    public string? LastMessage { get; set; }
+
+    [JsonIgnore] public string TypeDisplay => Type == DeployType.Sftp ? "SFTP / SSH" : "CertificateGet Agent";
+    [JsonIgnore] public string Endpoint => Type == DeployType.Sftp
+        ? $"{Username}@{Host}:{Port}  {RemoteFolder}"
+        : $"{AgentUrl}  slot \"{AgentSlot}\"";
+    [JsonIgnore] public string LastDisplay => LastDeployUtc == null
+        ? "Never deployed"
+        : $"{(LastSuccess == true ? "Deployed" : "Failed")} {LastDeployUtc.Value.ToLocalTime():yyyy-MM-dd HH:mm}";
+    [JsonIgnore] public string LastLevel => LastDeployUtc == null ? "none" : LastSuccess == true ? "ok" : "bad";
+    [JsonIgnore] public string OptionsDisplay => (Enabled ? "" : "Disabled · ") + (AutoDeploy ? "Automatic after renewal" : "Manual only");
 }
