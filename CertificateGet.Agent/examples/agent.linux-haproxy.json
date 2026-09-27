@@ -22,10 +22,9 @@
           "Name": "Cockpit",
           "Folder": "/etc/cockpit/ws-certs.d",
           "Files": [
-            { "Source": "fullchain", "FileName": "90-letsencrypt.crt" },
-            { "Source": "key", "FileName": "90-letsencrypt.key" }
+            { "Source": "combined", "FileName": "reddinassessments.cert" }
           ],
-          "Commands": [ "systemctl try-restart cockpit" ]
+          "Commands": [ "chgrp cockpit-ws {folder}/reddinassessments.cert && chmod 640 {folder}/reddinassessments.cert && restorecon -F {folder}/reddinassessments.cert ; systemctl reset-failed cockpit.socket cockpit ; systemctl restart cockpit.socket ; systemctl try-restart cockpit" ]
         }
       ],
       "Commands": []

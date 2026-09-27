@@ -140,10 +140,37 @@ public static class Deployer
         var tmp = target + ".cg-tmp";
         File.WriteAllBytes(tmp, bytes);
         if (!OperatingSystem.IsWindows())
-            File.SetUnixFileMode(tmp, secret
-                ? UnixFileMode.UserRead | UnixFileMode.UserWrite
-                : UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.GroupRead | UnixFileMode.OtherRead);
+        {
+            if (File.Exists(target))
+            {
+                // Replacing a file another service reads (e.g. Cockpit's root:cockpit-ws 640 cert):
+                // keep its owner, group, mode and SELinux label.
+                File.SetUnixFileMode(tmp, File.GetUnixFileMode(target));
+                RunQuiet("chown", $"--reference=\"{target}\" \"{tmp}\"");
+                RunQuiet("chcon", $"--reference=\"{target}\" \"{tmp}\"");
+            }
+            else
+            {
+                File.SetUnixFileMode(tmp, secret
+                    ? UnixFileMode.UserRead | UnixFileMode.UserWrite
+                    : UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.GroupRead | UnixFileMode.OtherRead);
+            }
+        }
         File.Move(tmp, target, overwrite: true);
+    }
+
+    /// <summary>Runs a small helper (chown/chcon); failures are ignored (e.g. SELinux not present).</summary>
+    private static void RunQuiet(string file, string args)
+    {
+        try
+        {
+            using var p = Process.Start(new ProcessStartInfo(file, args)
+                { UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true })!;
+            p.StandardOutput.ReadToEnd();
+            p.StandardError.ReadToEnd();
+            p.WaitForExit(10_000);
+        }
+        catch { /* tool not installed */ }
     }
 
     /// <summary>Copies the current file into the agent's own backups folder (never next to the live files,

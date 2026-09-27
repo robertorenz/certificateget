@@ -131,7 +131,13 @@ On the HAProxy machine, write `combined` into the `crt` directory, then run `hap
 
 ### Cockpit
 
-Cockpit uses the **last `.crt` file in alphabetical order** in `/etc/cockpit/ws-certs.d`, with the key in a `.key` file of the same name. Write `fullchain` as `90-letsencrypt.crt` and `key` as `90-letsencrypt.key` so they sort after Cockpit's own `0-self-signed.cert`. Then run `systemctl try-restart cockpit`.
+Cockpit uses the **last `.cert` or `.crt` file in alphabetical order** in `/etc/cockpit/ws-certs.d`, with the key in a `.key` file of the same name. If you already have a certificate file there, such as `reddinassessments.cert`, overwrite it with `combined`. A `.cert` file holds the chain and the key together. Otherwise, write `fullchain` as `90-letsencrypt.crt` and `key` as `90-letsencrypt.key`; they sort after Cockpit's own `0-self-signed.cert`.
+
+The key must be readable by the `cockpit-ws` group (`root:cockpit-ws`, mode 640), because `cockpit-tls` runs as that user. Use this command so the certificate always loads and a failed start can never leave Cockpit down:
+
+```
+chgrp cockpit-ws {folder}/reddinassessments.cert && chmod 640 {folder}/reddinassessments.cert && restorecon -F {folder}/reddinassessments.cert ; systemctl reset-failed cockpit.socket cockpit ; systemctl restart cockpit.socket ; systemctl try-restart cockpit
+```
 
 Check which certificate Cockpit uses with `sudo /usr/lib/cockpit/cockpit-certificate-ensure --check` (Debian/Ubuntu) or `sudo /usr/libexec/cockpit-certificate-ensure --check` (RHEL/Fedora).
 
@@ -142,7 +148,7 @@ See [`examples/agent.linux-haproxy.json`](examples/agent.linux-haproxy.json) for
 - **TLS only.** The app pins the agent's certificate fingerprint on first connect, after you confirm it matches `info`, and refuses a different certificate later.
 - **API key** is sent in the `X-Api-Key` header. The agent stores only its SHA-256 hash, and failed attempts are logged and slowed down.
 - **`AllowedIps`** restricts which machines may connect. Loopback is always allowed.
-- **Private-key files** are written with mode 600 on Linux.
+- **Private-key files** are written with mode 600 on Linux when they are new. When the agent replaces an existing file, it keeps that file's owner, group, mode and SELinux label. For example, Cockpit's `root:cockpit-ws 640` stays as it is.
 - **Protect the agent folder.** It contains `agent.json`, the agent's TLS key and the backups. Keep it readable by administrators or root only.
 
 ## Commands
