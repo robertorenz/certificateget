@@ -40,8 +40,10 @@ public class AgentConfig
 
     public static string Hash(string apiKey) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(apiKey)));
 
+    public bool HasValidKeyHash => ApiKeyHash.Length == 64 && ApiKeyHash.All(Uri.IsHexDigit);
+
     public bool CheckKey(string? apiKey) =>
-        !string.IsNullOrEmpty(apiKey) && !string.IsNullOrEmpty(ApiKeyHash) &&
+        !string.IsNullOrEmpty(apiKey) && HasValidKeyHash &&
         CryptographicOperations.FixedTimeEquals(Convert.FromHexString(Hash(apiKey)), Convert.FromHexString(ApiKeyHash));
 
     /// <summary>Creates a new random API key, stores its hash, and returns the key.</summary>
@@ -55,6 +57,18 @@ public class AgentConfig
     public X509Certificate2 LoadOrCreateTlsCertificate()
     {
         var path = Path.Combine(Folder, TlsPfx);
+        if (File.Exists(path) && !string.IsNullOrEmpty(TlsPassword))
+        {
+            try { return X509CertificateLoader.LoadPkcs12FromFile(path, TlsPassword); }
+            catch (CryptographicException)
+            {
+                // e.g. agent.json replaced by the example file: the stored password no longer matches.
+                Console.WriteLine($"The TLS certificate {path} could not be opened with the password in agent.json — creating a new one. " +
+                                  "The app will ask you to trust the new fingerprint.");
+                File.Move(path, path + ".old-" + DateTime.Now.ToString("yyyyMMddHHmmss"), true);
+                TlsPassword = "";
+            }
+        }
         if (!File.Exists(path) || string.IsNullOrEmpty(TlsPassword))
         {
             TlsPassword = Convert.ToHexString(RandomNumberGenerator.GetBytes(24));

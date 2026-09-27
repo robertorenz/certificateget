@@ -124,7 +124,15 @@ Set `TsplusFolder` if TSplus is installed somewhere else. If the certificate has
 
 ### HAProxy
 
-On the HAProxy machine, write `combined` into the `crt` directory, then run `haproxy -c -f /etc/haproxy/haproxy.cfg && systemctl reload haproxy` as the slot command.
+On the HAProxy machine, write `combined` into the `crt` directory, then run `haproxy -c -f /etc/haproxy/haproxy.cfg && systemctl reload haproxy` as the destination command. The config is checked first, so a bad file never takes HAProxy down.
+
+### Cockpit
+
+Cockpit uses the **last `.crt` file in alphabetical order** in `/etc/cockpit/ws-certs.d`, with the key in a `.key` file of the same name. Write `fullchain` as `90-letsencrypt.crt` and `key` as `90-letsencrypt.key` so they sort after Cockpit's own `0-self-signed.cert`. Then run `systemctl try-restart cockpit`.
+
+Check which certificate Cockpit uses with `sudo /usr/lib/cockpit/cockpit-certificate-ensure --check` (Debian/Ubuntu) or `sudo /usr/libexec/cockpit-certificate-ensure --check` (RHEL/Fedora).
+
+See [`examples/agent.linux-haproxy.json`](examples/agent.linux-haproxy.json) for HAProxy and Cockpit together.
 
 ## Security
 

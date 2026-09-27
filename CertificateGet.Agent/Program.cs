@@ -113,7 +113,7 @@ static class Cli
         var cfg = File.Exists(AgentConfig.FilePath) ? AgentConfig.Load() : AgentConfig.Sample();
         if (args.Length > 1 && int.TryParse(args[1], out var port)) cfg.Port = port;
         string? key = null;
-        if (string.IsNullOrEmpty(cfg.ApiKeyHash)) key = cfg.NewApiKey();
+        if (!cfg.HasValidKeyHash) key = cfg.NewApiKey();
         cfg.Save();
         using var tls = cfg.LoadOrCreateTlsCertificate();
 
@@ -219,7 +219,7 @@ static class Cli
         catch (Exception ex) { Console.WriteLine("ERROR " + ex.Message); return 1; }
         var problems = 0;
         void Bad(string m) { Console.WriteLine("  ✗ " + m); problems++; }
-        if (string.IsNullOrEmpty(cfg.ApiKeyHash)) Bad("No API key — run \"newkey\".");
+        if (!cfg.HasValidKeyHash) Bad("No valid API key (ApiKeyHash is empty or a placeholder) — run \"newkey\" and enter the new key in the app.");
         foreach (var ip in cfg.AllowedIps.Where(ip => !IPAddress.TryParse(ip, out _))) Bad($"AllowedIps: \"{ip}\" is not an IP address.");
         foreach (var dup in cfg.Slots.GroupBy(s => s.Name, StringComparer.OrdinalIgnoreCase).Where(g => g.Count() > 1)) Bad($"Slot name \"{dup.Key}\" is used twice.");
         foreach (var s in cfg.Slots)
