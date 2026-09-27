@@ -27,8 +27,22 @@ public class AgentConfig
     public static AgentConfig Load()
     {
         if (!File.Exists(FilePath)) throw new FileNotFoundException($"Configuration not found: {FilePath}. Run \"install\" first.");
-        return JsonSerializer.Deserialize<AgentConfig>(File.ReadAllText(FilePath), JsonOptions)
-               ?? throw new InvalidDataException("agent.json is empty.");
+        var text = File.ReadAllText(FilePath);
+        try
+        {
+            return JsonSerializer.Deserialize<AgentConfig>(text, JsonOptions)
+                   ?? throw new InvalidDataException("agent.json is empty.");
+        }
+        catch (JsonException ex)
+        {
+            var line = (int)(ex.LineNumber ?? 0);
+            var lines = text.Split('\n');
+            var shown = line < lines.Length ? lines[line].TrimEnd() : "";
+            throw new InvalidDataException(
+                $"agent.json has a syntax error on line {line + 1} (at {ex.Path}):\n    {shown}\n" +
+                "Common causes: text not inside \"quotes\", curly quotes instead of straight \", a missing comma between items, " +
+                "or a comma after the last item. Backslashes in Windows paths must be doubled (C:\\\\Apps).", ex);
+        }
     }
 
     public void Save()

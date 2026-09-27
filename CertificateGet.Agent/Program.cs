@@ -6,11 +6,11 @@ using CertificateGet.Agent;
 var command = args.FirstOrDefault()?.ToLowerInvariant() ?? "run";
 switch (command)
 {
-    case "install": return Cli.Install(args);
-    case "uninstall": return Cli.Uninstall();
-    case "newkey": return Cli.NewKey();
-    case "info": return Cli.Info();
-    case "check": return Cli.Check();
+    case "install": return Friendly(() => Cli.Install(args));
+    case "uninstall": return Friendly(Cli.Uninstall);
+    case "newkey": return Friendly(Cli.NewKey);
+    case "info": return Friendly(Cli.Info);
+    case "check": return Friendly(Cli.Check);
     case "run": break;
     default:
         Console.WriteLine("""
@@ -26,8 +26,26 @@ switch (command)
         return 1;
 }
 
+// Config problems are reported as a short message instead of a stack trace.
+static int Friendly(Func<int> action)
+{
+    try { return action(); }
+    catch (Exception ex) when (ex is InvalidDataException or FileNotFoundException)
+    {
+        Console.Error.WriteLine("ERROR " + ex.Message);
+        return 1;
+    }
+}
+
 // ---------- web host ----------
-var cfg = AgentConfig.Load();
+AgentConfig cfg;
+try { cfg = AgentConfig.Load(); }
+catch (Exception ex) when (ex is InvalidDataException or FileNotFoundException)
+{
+    Console.Error.WriteLine("ERROR " + ex.Message);
+    Log.Write("Not started: " + ex.Message.Split('\n')[0]);
+    return 1;
+}
 var tls = cfg.LoadOrCreateTlsCertificate();
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions { Args = args, ContentRootPath = AgentConfig.Folder });
 builder.Host.UseWindowsService(o => o.ServiceName = Cli.ServiceName);
@@ -43,7 +61,15 @@ var app = builder.Build();
 
 app.Use(async (ctx, next) =>
 {
-    var current = AgentConfig.Load(); // re-read so edits to agent.json apply without a restart
+    AgentConfig current;
+    try { current = AgentConfig.Load(); } // re-read so edits to agent.json apply without a restart
+    catch (Exception ex) when (ex is InvalidDataException or FileNotFoundException)
+    {
+        Log.Write("Request refused: " + ex.Message.Split('\n')[0]);
+        ctx.Response.StatusCode = 500;
+        await ctx.Response.WriteAsJsonAsync(new { error = $"The agent on {Environment.MachineName} cannot read its configuration. {ex.Message}" });
+        return;
+    }
     var ip = ClientIp(ctx);
     if (current.AllowedIps.Count > 0 && !current.AllowedIps.Contains(ip) && !(ip is "127.0.0.1" or "::1"))
     {
