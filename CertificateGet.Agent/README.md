@@ -23,8 +23,11 @@ cd "C:\Program Files\CertificateGet Agent"
 sudo mkdir -p /opt/certificateget-agent && sudo cp CertificateGet.Agent /opt/certificateget-agent/
 cd /opt/certificateget-agent && sudo chmod +x CertificateGet.Agent
 sudo ./CertificateGet.Agent install
-sudo ufw allow 9443/tcp   # if you use ufw
+sudo ufw allow 9443/tcp                                                          # Ubuntu/Debian with ufw
+sudo firewall-cmd --permanent --add-port=9443/tcp && sudo firewall-cmd --reload  # RHEL/Rocky/Alma/Fedora
 ```
+
+On SELinux systems (RHEL/Rocky/Alma/Fedora), `install` labels the program `bin_t`. Without that, a file moved from `/tmp` fails to start with `status=203/EXEC`. When updating, copy the new file with `cp` rather than `mv`, or run `sudo restorecon -v /opt/certificateget-agent/CertificateGet.Agent`.
 
 `install` creates `agent.json`, a random **API key** (shown once), and a TLS certificate. It registers the service to start automatically (Windows service `CertificateGetAgent`, systemd unit `certificateget-agent`) and, on Windows, opens the firewall port.
 

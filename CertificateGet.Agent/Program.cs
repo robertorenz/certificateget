@@ -147,7 +147,20 @@ static class Cli
                 [Install]
                 WantedBy=multi-user.target
                 """);
+            // SELinux (RHEL/Rocky/Alma/Fedora): a binary moved from /tmp keeps the user_tmp_t label and systemd
+            // fails with status=203/EXEC. Label it as a normal program (bin_t).
+            if (File.Exists("/usr/sbin/selinuxenabled") && ExecCode("/usr/sbin/selinuxenabled", "") == 0)
+            {
+                File.SetUnixFileMode(exe, File.GetUnixFileMode(exe) | UnixFileMode.UserExecute | UnixFileMode.GroupExecute | UnixFileMode.OtherExecute);
+                var pattern = exe.Replace(".", "\\.");
+                if (ExecCode("semanage", $"fcontext -a -t bin_t '{pattern}'") != 0)
+                    ExecCode("semanage", $"fcontext -m -t bin_t '{pattern}'");
+                if (ExecCode("restorecon", $"-v \"{exe}\"") != 0 || !Labelled(exe))
+                    Exec("chcon", $"-t bin_t \"{exe}\"");
+                Console.WriteLine("SELinux: labelled the agent as bin_t so systemd can run it.");
+            }
             Exec("systemctl", "daemon-reload");
+            Exec("systemctl", "reset-failed certificateget-agent", quiet: true);
             Exec("systemctl", "enable --now certificateget-agent");
             Exec("systemctl", "restart certificateget-agent");
         }
@@ -274,6 +287,33 @@ static class Cli
     private static bool ServiceExists(string name)
     {
         try { using var sc = new System.ServiceProcess.ServiceController(name); _ = sc.Status; return true; }
+        catch { return false; }
+    }
+
+    private static int ExecCode(string file, string args)
+    {
+        try
+        {
+            var psi = new ProcessStartInfo(file, args) { UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true };
+            using var p = Process.Start(psi)!;
+            p.StandardOutput.ReadToEnd();
+            p.StandardError.ReadToEnd();
+            p.WaitForExit();
+            return p.ExitCode;
+        }
+        catch { return -1; } // tool not installed
+    }
+
+    private static bool Labelled(string path)
+    {
+        try
+        {
+            var psi = new ProcessStartInfo("ls", $"-Z \"{path}\"") { UseShellExecute = false, RedirectStandardOutput = true };
+            using var p = Process.Start(psi)!;
+            var output = p.StandardOutput.ReadToEnd();
+            p.WaitForExit();
+            return output.Contains("bin_t");
+        }
         catch { return false; }
     }
 
