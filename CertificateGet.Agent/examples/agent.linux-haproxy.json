@@ -8,17 +8,27 @@
   "Slots": [
     {
       "Name": "reddin-wildcard",
-      "Description": "HAProxy edge: combined PEM in the crt directory",
+      "Description": "HAProxy + Cockpit on this server",
       "Destinations": [
         {
           "Name": "HAProxy",
           "Folder": "/etc/haproxy/certs",
           "Files": [
             { "Source": "combined", "FileName": "reddinassessments.com.pem" }
-          ]
+          ],
+          "Commands": [ "haproxy -c -f /etc/haproxy/haproxy.cfg && systemctl reload haproxy" ]
+        },
+        {
+          "Name": "Cockpit",
+          "Folder": "/etc/cockpit/ws-certs.d",
+          "Files": [
+            { "Source": "fullchain", "FileName": "90-letsencrypt.crt" },
+            { "Source": "key", "FileName": "90-letsencrypt.key" }
+          ],
+          "Commands": [ "systemctl try-restart cockpit" ]
         }
       ],
-      "Commands": [ "haproxy -c -f /etc/haproxy/haproxy.cfg && systemctl reload haproxy" ]
+      "Commands": []
     }
   ]
 }
