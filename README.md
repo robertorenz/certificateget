@@ -63,6 +63,10 @@ A Windows desktop app (C# / WPF, .NET 9) that gets free TLS certificates from **
 - For HTTP validation, the domain must point at the server and port 80 must be reachable from the internet
 - For wildcards, you need access to the domain's DNS
 
+## Download
+
+Ready-built, self-contained executables (no .NET install needed) are on the [Releases page](https://github.com/robertorenz/certificateget/releases/latest): `CertificateGet.exe`, the Windows agent (`CertificateGet.Agent-win-x64.zip`) and the Linux agent (`CertificateGet.Agent-linux-x64.tar.gz`).
+
 ## Build and run
 
 ```powershell
