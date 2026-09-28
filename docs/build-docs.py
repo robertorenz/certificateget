@@ -1,14 +1,15 @@
-# Builds the four CertificateGet Agent volumes:
+# Builds the four volumes of the CertificateGet manual, the app first and the agent after it:
 #
-#   getting-started.html    get the executables, install on Windows and Linux, connect the app
-#   programmers-guide.html  how a deployment runs, files, backups, restarts, security, platform notes
-#   template-guide.html     ready-made agent.json for NetTalk, HAProxy, Cockpit and TSplus
-#   reference.html          every agent.json field, source, kind, command and endpoint
+#   getting-started.html    install the app, first certificate; install the agent, connect the app
+#   programmers-guide.html  validation, certificate authorities, deployment, storage; how the agent works
+#   template-guide.html     recipes in the app; ready-made agent.json for NetTalk, HAProxy, Cockpit, TSplus
+#   reference.html          file formats, settings, methods; every agent.json field, command and endpoint
 #
 # The reference volume is READ OUT OF THE SOURCES - AgentConfig.cs, ProgramRestarter.cs,
-# Program.cs and Deployer.cs - and the combined examples are read out of
-# CertificateGet.Agent/examples, so a field, default or command here is the one in the build.
-# Run from the repository root after changing the agent:   python docs/build-docs.py
+# Program.cs and Deployer.cs for the agent, CertificateStore.cs, Models.cs and DeployService.cs for
+# the app - and the combined examples are read out of CertificateGet.Agent/examples, so a field,
+# default or command here is the one in the build.  The app's chapters are in build-docs-app.py.
+# Run from the repository root after changing the app or the agent:   python docs/build-docs.py
 #
 # Every volume is built twice: in English into docs/ and in Spanish into docs/es/. The Spanish
 # text lives in docs/build-docs-es.py, which is loaded into this namespace and uses the same
@@ -266,10 +267,10 @@ def flow(rows):
 
 # ---------------------------------------------------------------- volumes
 VOLUMES = {'en': [
- ('getting-started.html',   'Getting Started',    'Install the agent and connect the app'),
- ('programmers-guide.html', "Programmer's Guide", 'How deployments run, security, platform notes'),
- ('template-guide.html',    'Template Guide',     'agent.json for NetTalk, HAProxy, Cockpit, TSplus'),
- ('reference.html',         'Reference',          'Every field, source, command and endpoint'),
+ ('getting-started.html',   'Getting Started',    'Install the app, first certificate, install the agent'),
+ ('programmers-guide.html', "Programmer's Guide", 'Validation, authorities, deployment; how the agent works'),
+ ('template-guide.html',    'Template Guide',     'Recipes in the app; agent.json for NetTalk, HAProxy, Cockpit, TSplus'),
+ ('reference.html',         'Reference',          'Formats, settings; every agent field, command and endpoint'),
 ], 'es': [
  ('getting-started.html',   'Primeros pasos',       'Instalar el agente y conectar la aplicación'),
  ('programmers-guide.html', 'Guía del programador', 'Cómo se ejecuta una implementación, seguridad, notas de plataforma'),
@@ -279,16 +280,18 @@ VOLUMES = {'en': [
 
 #  Words of the page frame itself, per language.
 CHROME = {
- 'en': {'filter': 'Filter', 'filter_ph': 'Folder, combined, check&hellip;', 'lang': 'Language',
-        'footer': 'CertificateGet Agent &mdash; four volumes. The reference is generated from '
-                  '<code>AgentConfig.cs</code>, <code>ProgramRestarter.cs</code>, <code>Program.cs</code> and '
+ 'en': {'filter': 'Filter', 'filter_ph': 'Folder, combined, check&hellip;', 'lang': 'Language', 'brand': 'Manual',
+        'footer': 'CertificateGet manual &mdash; four volumes, the app and the agent. The reference is generated from '
+                  'the app\'s <code>CertificateStore.cs</code>, <code>Models.cs</code> and <code>DeployService.cs</code> and the '
+                  'agent\'s <code>AgentConfig.cs</code>, <code>ProgramRestarter.cs</code>, <code>Program.cs</code> and '
                   '<code>Deployer.cs</code>, and the combined examples are the files in <code>CertificateGet.Agent/examples</code>, '
-                  'so fields, defaults and commands are the ones in the build.'},
- 'es': {'filter': 'Filtrar', 'filter_ph': 'Folder, combined, check&hellip;', 'lang': 'Idioma',
-        'footer': 'CertificateGet Agent &mdash; cuatro volúmenes. La referencia se genera a partir de '
+                  'so formats, settings, fields, defaults and commands are the ones in the build.'},
+ 'es': {'filter': 'Filtrar', 'filter_ph': 'Folder, combined, check&hellip;', 'lang': 'Idioma', 'brand': 'Manual',
+        'footer': 'Manual de CertificateGet &mdash; cuatro volúmenes, la aplicación y el agente. La referencia se genera a partir de '
+                  '<code>CertificateStore.cs</code>, <code>Models.cs</code> y <code>DeployService.cs</code> de la aplicación y '
                   '<code>AgentConfig.cs</code>, <code>ProgramRestarter.cs</code>, <code>Program.cs</code> y '
-                  '<code>Deployer.cs</code>, y los ejemplos completos son los archivos de <code>CertificateGet.Agent/examples</code>, '
-                  'así que los campos, valores predeterminados y comandos son los de la compilación.'},
+                  '<code>Deployer.cs</code> del agente, y los ejemplos completos son los archivos de <code>CertificateGet.Agent/examples</code>, '
+                  'así que los formatos, ajustes, campos, valores predeterminados y comandos son los de la compilación.'},
 }
 LANGS = [('en', 'English'), ('es', 'Español')]
 
@@ -604,7 +607,7 @@ def page(filename, title, eyebrow, heading, sub, chips, groups, body, showfilter
            'family=IBM+Plex+Serif:wght@400;600&display=swap">\n'
            '<style>%s</style>\n'
            '<div class="wrap">\n<nav class="side">\n'
-           '  <p class="brand"><b>CertificateGet</b> Agent</p>\n%s\n</nav>\n'
+           '  <p class="brand"><b>CertificateGet</b> %s</p>\n%s\n</nav>\n'
            '<main class="main">\n'
            '  <header class="hero"><div class="inner">\n'
            '    <p class="eyebrow">%s</p>\n    <h1>%s</h1>\n    <p class="sub">%s</p>\n'
@@ -612,7 +615,7 @@ def page(filename, title, eyebrow, heading, sub, chips, groups, body, showfilter
            '  </div></header>\n  <div class="inner">%s\n'
            '    <footer>%s</footer>\n'
            '  </div>\n</main>\n</div>\n<script>%s</script>\n'
-           % (LANG, esc(title), CSS, nav, esc(eyebrow), esc(heading), sub, chiphtml, body, C['footer'], JS))
+           % (LANG, esc(title), CSS, C['brand'], nav, esc(eyebrow), esc(heading), sub, chiphtml, body, C['footer'], JS))
     sub_ = [] if LANG == 'en' else [LANG]
     os.makedirs(os.path.join(ROOT, 'docs', *sub_), exist_ok=True)
     io.open(os.path.join(ROOT, 'docs', *sub_, filename), 'w', encoding='utf-8', newline='\n').write(doc)
@@ -638,8 +641,9 @@ GS, PG, TG, RF = 'getting-started.html', 'programmers-guide.html', 'template-gui
 # =====================================================================
 def build_getting_started():
     B = []; add = B.append
+    app_getting_started(add)
 
-    add('<h2 id="what"><span class="k">Overview</span>What the agent does</h2>')
+    add('<h2 id="what"><span class="k">The agent</span>What the agent does</h2>')
     add('''<p>The agent is a small service you install on each server that uses a certificate. When the
 CertificateGet app issues or renews a certificate, it sends the files to the agent over HTTPS. The agent
 writes them where each program expects them, restarts what needs restarting, and reports every step back
@@ -802,14 +806,15 @@ app, click <b>Forget fingerprint</b>, and trust the new one on the next connect.
     add('<h2 id="next1"><span class="k">Getting Started</span>Where to go next</h2>')
     add(nextcards([TG, PG, RF]))
 
-    nav = [('Install', ['what', 'build', 'win', 'win-what', 'linux', 'linux-what']),
-           ('Configure', ['slot', 'app', 'verify']),
-           ('Maintenance', ['update', 'update-win', 'update-linux', 'remove']),
+    nav = APP_NAV_GS + [
+           ('Agent: install', ['what', 'build', 'win', 'win-what', 'linux', 'linux-what']),
+           ('Agent: configure', ['slot', 'app', 'verify']),
+           ('Agent: maintenance', ['update', 'update-win', 'update-linux', 'remove']),
            ('', ['next1'])]
-    return page(GS, 'Agent Getting Started', 'Volume 1', 'Getting Started',
-                'Build the agent, install it as a service on Windows or Linux, describe where the certificate goes, '
-                'and connect the CertificateGet app to it.',
-                ['<b>Windows</b> service', '<b>Linux</b> systemd', '<b>HTTPS</b> port 9443', '<b>5</b> steps'],
+    return page(GS, 'CertificateGet Getting Started', 'Volume 1', 'Getting Started',
+                'Install the app and request your first certificate, then install the agent on your Windows or Linux '
+                'servers, describe where the certificate goes, and connect the app to it.',
+                ['<b>First</b> certificate', '<b>Windows</b> service', '<b>Linux</b> systemd', '<b>HTTPS</b> port 9443'],
                 nav, ''.join(B))
 
 # =====================================================================
@@ -817,8 +822,9 @@ app, click <b>Forget fingerprint</b>, and trust the new one on the next connect.
 # =====================================================================
 def build_programmers_guide():
     B = []; add = B.append
+    app_programmers_guide(add)
 
-    add('<h2 id="model"><span class="k">Concepts</span>Slots, destinations and files</h2>')
+    add('<h2 id="model"><span class="k">Agent concepts</span>Slots, destinations and files</h2>')
     add('''<p>Three levels describe where a certificate goes on a server.</p>''')
     add(table(['Level', 'What it is', 'Typical count'], [
         ['<b>Slot</b>', 'One certificate as the server sees it. A deployment target in the app names one slot.', 'One per certificate, for example <code>reddin-wildcard</code>.'],
@@ -985,16 +991,18 @@ the program can only be started with <code>"StartIn": "Background"</code>.</p>''
     add('<h2 id="next2"><span class="k">Programmer\'s Guide</span>Where to go next</h2>')
     add(nextcards([TG, RF, GS]))
 
-    nav = [('Concepts', ['model', 'flow', 'failures', 'hot']),
-           ('Files', ['writes', 'backups']),
-           ('Restarts', ['restarts', 'services', 'programs', 'commands']),
-           ('Operations', ['security', 'trouble']),
-           ('Platform notes', ['notes', 'n-selinux', 'n-example', 'n-haproxy', 'n-cockpit', 'n-nettalk', 'n-tsplus', 'n-session']),
+    nav = APP_NAV_PG + [
+           ('Agent: concepts', ['model', 'flow', 'failures', 'hot']),
+           ('Agent: files', ['writes', 'backups']),
+           ('Agent: restarts', ['restarts', 'services', 'programs', 'commands']),
+           ('Agent: operations', ['security', 'trouble']),
+           ('Agent: platform notes', ['notes', 'n-selinux', 'n-example', 'n-haproxy', 'n-cockpit', 'n-nettalk', 'n-tsplus', 'n-session']),
            ('', ['next2'])]
-    return page(PG, "Agent Programmer's Guide", 'Volume 2', "Programmer's Guide",
-                'How a deployment runs from the app to the last restart, how files and backups are handled, the '
-                'security model, troubleshooting, and the platform behaviour behind each rule.',
-                ['<b>8</b> stages', '<b>atomic</b> writes', '<b>pinned</b> TLS', '<b>7</b> platform notes'],
+    return page(PG, "CertificateGet Programmer's Guide", 'Volume 2', "Programmer's Guide",
+                'How the app validates, which certificate authority to use, how certificates, renewals, deployment and '
+                'secrets work; then how an agent deployment runs to the last restart, its security model, '
+                'troubleshooting and the platform behaviour behind each rule.',
+                ['<b>%d</b> validation methods' % len(APP_METHODS), '<b>2</b> authorities', '<b>atomic</b> writes', '<b>7</b> platform notes'],
                 nav, ''.join(B))
 
 def ul_list(items):
@@ -1155,6 +1163,7 @@ T_TSPLUS_PATHS = r'''{ "Name": "TSplus (15+) on D:",   "Kind": "TSplus",    "Tsp
 
 def build_template_guide():
     B = []; add = B.append
+    app_template_guide(add)
 
     add('<h2 id="anatomy"><span class="k">agent.json</span>The shape of the file</h2>')
     add('''<p><code>agent.json</code> sits next to the executable. The top of the file is written by
@@ -1290,17 +1299,17 @@ desktop program, and into TSplus. The second serves HAProxy and Cockpit on one L
     add('<h2 id="next3"><span class="k">Template Guide</span>Where to go next</h2>')
     add(nextcards([RF, PG, GS]))
 
-    nav = [('agent.json', ['anatomy']),
+    nav = APP_NAV_TG + [('agent.json', ['anatomy']),
            ('NetTalk', ['nettalk', 'nettalk-one', 'nettalk-many', 'nettalk-desktop']),
            ('HAProxy', ['haproxy', 'haproxy-one', 'haproxy-many']),
            ('Cockpit', ['cockpit', 'cockpit-replace', 'cockpit-new', 'cockpit-cmd']),
            ('TSplus', ['tsplus', 'tsplus-15', 'tsplus-jks', 'tsplus-paths']),
            ('Complete files', ['together', 'together-win', 'together-linux']),
            ('', ['next3'])]
-    return page(TG, 'Agent Template Guide', 'Volume 3', 'Template Guide',
-                'Ready-made <code>agent.json</code> slots for NetTalk, HAProxy, Cockpit and TSplus, with the reasoning '
-                'behind each file name and command.',
-                ['<b>NetTalk</b> service &amp; desktop', '<b>HAProxy</b> combined PEM', '<b>Cockpit</b> ws-certs.d', '<b>TSplus</b> 15+ &amp; jks'],
+    return page(TG, 'CertificateGet Template Guide', 'Volume 3', 'Template Guide',
+                'Recipes for common setups in the app, then ready-made <code>agent.json</code> slots for NetTalk, HAProxy, '
+                'Cockpit and TSplus, with the reasoning behind each file name and command.',
+                ['<b>IIS</b> &amp; SFTP recipes', '<b>NetTalk</b> service &amp; desktop', '<b>HAProxy</b> combined PEM', '<b>Cockpit</b> ws-certs.d', '<b>TSplus</b> 15+ &amp; jks'],
                 nav, ''.join(B))
 
 # =====================================================================
@@ -1354,6 +1363,7 @@ def field_rows(clsname, prefix_json=True):
 
 def build_reference():
     B = []; add = B.append
+    app_reference(add)
 
     add('<h2 id="root"><span class="k">agent.json</span>Top level</h2>')
     add('<p>%s Names are matched without regard to case.</p>' % esc(CLASSES['AgentConfig']['doc']))
@@ -1454,20 +1464,25 @@ Errors come back as <code>{ "error": "…" }</code> with status 401 (key), 403 (
     add('<h2 id="next4"><span class="k">Reference</span>Where to go next</h2>')
     add(nextcards([GS, PG, TG]))
 
-    nav = [('agent.json', ['root', 'slot', 'dest', 'file', 'prog']),
-           ('Values', ['values', 'sources', 'kinds', 'startin', 'placeholders']),
-           ('Operation', ['cli', 'api', 'req', 'certinfo', 'disk']),
+    nav = APP_NAV_RF + [
+           ('Agent: agent.json', ['root', 'slot', 'dest', 'file', 'prog']),
+           ('Agent: values', ['values', 'sources', 'kinds', 'startin', 'placeholders']),
+           ('Agent: operation', ['cli', 'api', 'req', 'certinfo', 'disk']),
            ('', ['next4'])]
     nfields = sum(len(CLASSES[c]['props']) for c in ('AgentConfig', 'Slot', 'Destination', 'FileSpec', 'ProgramSpec'))
-    return page(RF, 'Agent Reference', 'Volume 4', 'Reference',
-                'Every <code>agent.json</code> field, allowed value, command and endpoint, generated from the agent\'s '
-                'sources, with a worked line against each field.',
-                ['<b>%d</b> fields' % nfields, '<b>%d</b> sources' % len(SOURCES), '<b>%d</b> commands' % len(CLI),
+    return page(RF, 'CertificateGet Reference', 'Volume 4', 'Reference',
+                'The app\'s file formats, validation methods and settings, then every <code>agent.json</code> field, '
+                'allowed value, command and endpoint, all generated from the sources.',
+                ['<b>%d</b> formats' % len(APP_FORMATS), '<b>%d</b> settings' % len(APP_SETTINGS), '<b>%d</b> agent fields' % nfields, '<b>%d</b> sources' % len(SOURCES), '<b>%d</b> commands' % len(CLI),
                  '<b>%d</b> endpoints' % len(ENDPOINTS)],
                 nav, ''.join(B), showfilter=True)
 
 # =====================================================================
-#  The Spanish volumes: same helpers, same checks, their own words.
+#  The app's chapters, then the Spanish volumes: same helpers, same checks.
+exec(compile(io.open(os.path.join(ROOT, 'docs', 'build-docs-app.py'), encoding='utf-8').read(),
+             'build-docs-app.py', 'exec'))
+exec(compile(io.open(os.path.join(ROOT, 'docs', 'build-docs-app-es.py'), encoding='utf-8').read(),
+             'build-docs-app-es.py', 'exec'))
 exec(compile(io.open(os.path.join(ROOT, 'docs', 'build-docs-es.py'), encoding='utf-8').read(),
              'build-docs-es.py', 'exec'))
 

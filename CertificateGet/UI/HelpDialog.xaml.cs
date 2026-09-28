@@ -22,7 +22,7 @@ public partial class HelpDialog : Window
         _lang = LangEs.IsChecked == true ? HelpDocs.Spanish : HelpDocs.English;
         var es = _lang == HelpDocs.Spanish;
         VolumeList.ItemsSource = HelpDocs.Volumes(_lang);
-        TitleText.Text = es ? "Manual de CertificateGet Agent" : "CertificateGet Agent manual";
+        TitleText.Text = es ? "Manual de CertificateGet" : "CertificateGet manual";
         SubtitleText.Text = es ? "Cuatro volúmenes. Cada uno se abre en el navegador y enlazan entre sí."
                                : "Four volumes. Each opens in your browser, and they link to each other.";
         FooterText.Text = es ? "Pulse F1 en cualquier lugar para abrir esta lista." : "Press F1 anywhere to open this list.";

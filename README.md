@@ -48,13 +48,13 @@ A Windows desktop app (C# / WPF, .NET 9) that gets free TLS certificates from **
 - **Stored and ready to reuse.** Every certificate keeps its settings and full issuance history. **Renew** reuses the settings with one click. **Export** writes any formats to a folder and can set a new PFX password or none.
 - **Install in Windows.** Adds the certificate to the Local Machine or Current User store for IIS, RDP or SQL Server.
 - **Deployment to your servers.** Each certificate can have deployment targets. After every issuance or renewal the app pushes the new files automatically; there is also a **Deploy now** button.
-  - **CertificateGet Agent**: a small Windows or Linux service ([CertificateGet.Agent](CertificateGet.Agent/README.md)). It writes the files into any number of folders with the names each app instance expects, restarts services or runs commands, imports into **TSplus**, and keeps backups. Suited to NetTalk, TSplus and HAProxy servers. See the [agent manual](#agent-manual) for install steps and `agent.json` templates for NetTalk, HAProxy, Cockpit and TSplus.
+  - **CertificateGet Agent**: a small Windows or Linux service ([CertificateGet.Agent](CertificateGet.Agent/README.md)). It writes the files into any number of folders with the names each app instance expects, restarts services or runs commands, imports into **TSplus**, and keeps backups. Suited to NetTalk, TSplus and HAProxy servers. See the [manual](#manual) for install steps and `agent.json` templates for NetTalk, HAProxy, Cockpit and TSplus.
   - **SFTP / SSH**: uploads files atomically and runs a command such as `haproxy -c … && systemctl reload haproxy`. Nothing to install on the server; presets for HAProxy and nginx.
 - **Activity log.** Every request, challenge, validation, export, install and error is recorded with search, level filter and CSV export.
 - **Staging and Production.** Test against Let's Encrypt staging without hitting rate limits, then switch to Production.
-- **Let's Encrypt or ZeroSSL.** Choose the certificate authority per certificate. ZeroSSL issues trusted 90-day certificates with no rate limits; its ACME account is linked to a ZeroSSL account through External Account Binding, which the app requests automatically with your contact e-mail, or with a ZeroSSL API key from Settings so the certificates appear in your ZeroSSL dashboard. ZeroSSL has no staging server.
+- **Let's Encrypt or ZeroSSL.** Choose the certificate authority per certificate; see [Certificate authorities](#certificate-authorities).
 - **Secrets protected.** PFX passwords, ACME account keys, DNS API tokens and keys, and acme-dns passwords are encrypted with Windows DPAPI for your user account.
-- **Help built in.** **Help** in the sidebar (or F1) opens the four-volume agent manual in your browser, in English or Spanish, from a copy inside the exe, so it works offline.
+- **Help built in.** **Help** in the sidebar (or F1) opens the four-volume manual (the app and the agent) in your browser, in English or Spanish, from a copy inside the exe, so it works offline.
 - Popups are modal dialogs, not message boxes. The interface uses a slate, blue and teal theme.
 
 ## Requirements
@@ -94,6 +94,31 @@ Run it **as administrator** when you want to install into the Local Machine cert
 5. When it works, request again with **Production** to get a trusted certificate.
 6. On **Certificates**, open the folder, export, install into Windows or renew. Certificates close to expiry are shown in amber or red.
 
+## Certificate authorities
+
+Each certificate is requested from **Let's Encrypt** or **ZeroSSL**, chosen under **Certificate authority** on **New certificate**. The default for new certificates is in **Settings**.
+
+| | Let's Encrypt | ZeroSSL |
+|---|---|---|
+| Test server | **Staging** (untrusted certificates, generous limits) | None: every request is a trusted certificate |
+| Account | Created automatically; e-mail optional | Must be linked to a ZeroSSL account (External Account Binding) |
+| Rate limits | Yes (e.g. 5 failed validations per hour, 50 certificates per registered domain per week) | No ACME rate limits |
+| Time to issue | Seconds | Usually seconds, sometimes minutes; the app waits up to 10 |
+| Chain | ISRG roots | Sectigo (USERTrust) roots |
+
+Both issue free, trusted 90-day certificates, including wildcards. Use Let's Encrypt to test a new setup on Staging first; use ZeroSSL after hitting a Let's Encrypt rate limit, to see your certificates in a ZeroSSL dashboard, or as a second authority to fall back on.
+
+### Setting up ZeroSSL
+
+The first ZeroSSL request creates the ACME account and links it to a ZeroSSL account, in one of two ways:
+
+- **With a ZeroSSL API key** (recommended): in the ZeroSSL dashboard open **Developer**, copy the **API Access Key** and paste it into **Settings → ACME accounts → ZeroSSL API key**. The certificates then appear in your ZeroSSL dashboard.
+- **With the contact e-mail only**: leave the key empty and enter a contact e-mail. ZeroSSL creates an account for that address if it has none.
+
+After that only the ACME account key (`accounts\zerossl.json`) is used. To move to another ZeroSSL account, change the key or e-mail and click **Reset accounts** in Settings (this resets the Let's Encrypt accounts too; they are recreated on the next request).
+
+To move an existing certificate to the other authority, click **Renew**, change **Certificate authority** and request. The history, deployment targets and agents are unaffected; only `fullchain-root` ends in a different root.
+
 ### Cloudflare token
 
 Create the token in Cloudflare under **My Profile → API Tokens → Create Token**, with **Zone → Zone → Read** and **Zone → DNS → Edit** for the zones you need. Paste it in **Settings** and click **Test token**.
@@ -106,21 +131,21 @@ In hPanel, open **Account** (profile icon) → **API** and create a token. Paste
 
 In the Constellix portal, open **Edit My Account → API Keys** and create a key. Copy the **API key** and the **secret key**, which is shown when the key is created. Paste both in **Settings** and click **Test keys**; it lists the domains in the account. Requests are signed with the current time, so the PC clock must be correct. The app merges its values into an existing `_acme-challenge` record if there is one, and afterwards removes only its own values.
 
-## Agent manual
+## Manual
 
-The CertificateGet Agent has a four-volume manual in English and Spanish, generated by `python docs/build-docs.py` (the reference volume is read out of the agent's sources). English goes to [`docs/`](docs) and Spanish to [`docs/es/`](docs/es); the Spanish text lives in `docs/build-docs-es.py`, and the build fails if a Spanish volume's headings drift from the English one or a field has no Spanish description. The build also writes `docs/help/` and `docs/help/es/`, copies with relative links that are embedded in the app and opened by **Help** / F1 (with an English / Español switch); run the generator before building the app after changing the docs. Every page has a language switch to the same volume in the other language.
+CertificateGet has a four-volume manual covering the app and the agent, in English and Spanish, generated by `python docs/build-docs.py`. Each volume covers the app first, then the agent. The reference volume is read out of the sources: file formats, settings, validation methods and SFTP file types from the app, every `agent.json` field, command and endpoint from the agent. English goes to [`docs/`](docs) and Spanish to [`docs/es/`](docs/es). The app's chapters are in `docs/build-docs-app.py` (and `build-docs-app-es.py`), the agent's Spanish text in `docs/build-docs-es.py`. The build fails if a Spanish volume's headings drift from the English one, or if a format, setting, method or field has no description. The build also writes `docs/help/` and `docs/help/es/`, copies with relative links that are embedded in the app and opened by **Help** / F1 (with an English / Español switch); run the generator before building the app after changing the docs. Every page has a language switch to the same volume in the other language.
 
-1. [Getting Started](https://claude.ai/artifact/6NUtSWhxsJHAgFg1bsgEjH): build, install on Windows and Linux step by step, connect the app
-2. [Programmer's Guide](https://claude.ai/artifact/Xk9wRJUG5rPquoFTwbCrFe): how a deployment runs, backups, restarts, security, troubleshooting
-3. [Template Guide](https://claude.ai/artifact/4NaQZxJRzNB1EgG6FPq4i7): ready-made `agent.json` for NetTalk, HAProxy, Cockpit and TSplus
-4. [Reference](https://claude.ai/artifact/WfYNLoBapj4dsyLWJMPU8s): every `agent.json` field, source, command and endpoint
+1. [Getting Started](https://claude.ai/artifact/6NUtSWhxsJHAgFg1bsgEjH): install the app, first certificate, using it; install the agent on Windows and Linux, connect it
+2. [Programmer's Guide](https://claude.ai/artifact/Xk9wRJUG5rPquoFTwbCrFe): validation methods and DNS providers, Let's Encrypt and ZeroSSL, renewals, SFTP and agent deployment, storage and secrets; how an agent deployment runs, security, troubleshooting
+3. [Template Guide](https://claude.ai/artifact/4NaQZxJRzNB1EgG6FPq4i7): recipes (IIS, wildcard with Cloudflare, HAProxy and nginx over SFTP); ready-made `agent.json` for NetTalk, HAProxy, Cockpit and TSplus
+4. [Reference](https://claude.ai/artifact/WfYNLoBapj4dsyLWJMPU8s): every file format, validation method and setting of the app; every `agent.json` field, source, command and endpoint
 
 En español:
 
-1. [Primeros pasos](https://claude.ai/artifact/5G22xWR3cTTfuWabzd1den): compilar, instalar en Windows y Linux paso a paso, conectar la aplicación
-2. [Guía del programador](https://claude.ai/artifact/1Md1dk2STxaDExvMtmxifP): cómo se ejecuta un despliegue, copias, reinicios, seguridad, solución de problemas
-3. [Guía de plantillas](https://claude.ai/artifact/P99MLSHwS4nKgr7gTRCAKU): `agent.json` listos para NetTalk, HAProxy, Cockpit y TSplus
-4. [Referencia](https://claude.ai/artifact/LV7XNKYtxXtAna9Xkw2CAJ): cada campo de `agent.json`, origen, comando y endpoint
+1. [Primeros pasos](https://claude.ai/artifact/5G22xWR3cTTfuWabzd1den): instalar la aplicación, primer certificado; instalar el agente en Windows y Linux, conectarlo
+2. [Guía del programador](https://claude.ai/artifact/1Md1dk2STxaDExvMtmxifP): métodos de validación, Let's Encrypt y ZeroSSL, renovaciones, despliegue, almacén; cómo funciona el agente
+3. [Guía de plantillas](https://claude.ai/artifact/P99MLSHwS4nKgr7gTRCAKU): recetas en la aplicación; `agent.json` listos para NetTalk, HAProxy, Cockpit y TSplus
+4. [Referencia](https://claude.ai/artifact/LV7XNKYtxXtAna9Xkw2CAJ): cada formato y ajuste de la aplicación; cada campo de `agent.json`, comando y endpoint
 
 ### acme-dns
 
@@ -151,7 +176,8 @@ Default location: `%LOCALAPPDATA%\CertificateGet\Store`. You can change it in Se
 ```
 Store\
   activity.jsonl                         activity log (JSON lines)
-  accounts\staging.json, production.json ACME account keys (DPAPI encrypted)
+  accounts\staging.json, production.json Let's Encrypt ACME account keys (DPAPI encrypted)
+  accounts\zerossl.json                  ZeroSSL ACME account key (DPAPI encrypted)
   certificates\
     wildcard.example.com_<id>\
       profile.json                       domains, method, options, history
@@ -173,6 +199,7 @@ CertificateGet/
   Services/NamecheapDns.cs      Namecheap XML API client (read, merge and write back the host list)
   Services/AcmeDns.cs           acme-dns client: registration, TXT updates, CNAME delegation
   Services/HelpDocs.cs          extracts the embedded manual and opens it (Help / F1)
+  Services/ZeroSsl.cs           ZeroSSL ACME directory and EAB credentials (API key or e-mail)
   Services/DeployService.cs     deployment to SFTP servers and CertificateGet agents
   Services/CertificateStore.cs  key/CSR generation, file writing (PFX via Pkcs12Builder), export, Windows store install
   Services/AppServices.cs       settings, DPAPI helpers, activity log
@@ -184,7 +211,7 @@ CertificateGet.Agent/           the server agent (ASP.NET Core minimal API, Wind
   Deployer.cs                   writes files, backups, TSplus import, service restarts, commands
   ProgramRestarter.cs           restarts desktop programs in the user's session (Windows)
   examples/                     agent.json for Windows (NetTalk + TSplus) and Linux (HAProxy + Cockpit)
-docs/                           agent manual (four HTML volumes, Spanish in docs/es) and build-docs.py / build-docs-es.py that generate them
+docs/                           the manual (four HTML volumes, Spanish in docs/es) and the build-docs*.py scripts that generate them
   help/                         the same volumes with relative links, embedded in the app for Help / F1
 ```
 

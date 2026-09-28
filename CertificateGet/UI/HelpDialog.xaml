@@ -21,7 +21,7 @@
                         <TextBlock Text="&#xE897;" Style="{StaticResource Icon}" FontSize="17" Foreground="{StaticResource PrimaryBrush}" HorizontalAlignment="Center"/>
                     </Border>
                     <StackPanel VerticalAlignment="Center">
-                        <TextBlock x:Name="TitleText" Text="CertificateGet Agent manual" FontSize="17" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
+                        <TextBlock x:Name="TitleText" Text="CertificateGet manual" FontSize="17" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
                         <TextBlock x:Name="SubtitleText" Text="Four volumes. Each opens in your browser, and they link to each other." Style="{StaticResource PageSubtitle}" Margin="0,2,0,0"/>
                     </StackPanel>
                 </StackPanel>

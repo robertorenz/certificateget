@@ -1,4 +1,4 @@
-# Los cuatro volúmenes en español.  No se ejecuta solo: build-docs.py lo carga en su
+# Los cuatro volúmenes en español (los capítulos de la aplicación están en build-docs-app-es.py).  No se ejecuta solo: build-docs.py lo carga en su
 # propio espacio de nombres, así que usa los mismos ayudantes (code, note, table, steps,
 # flow, page, field_rows...), los mismos datos leídos de las fuentes (CLASSES, SOURCES,
 # KINDS, CLI, ENDPOINTS...) y las mismas comprobaciones.  Cada volumen debe tener
@@ -111,8 +111,9 @@ ENDPOINT_DOC_ES = {
 # =====================================================================
 def build_getting_started_es():
     B = []; add = B.append
+    app_getting_started_es(add)
 
-    add('<h2 id="what"><span class="k">Introducción</span>Qué hace el agente</h2>')
+    add('<h2 id="what"><span class="k">El agente</span>Qué hace el agente</h2>')
     add('''<p>El agente es un pequeño servicio que se instala en cada servidor que usa un certificado. Cuando la
 aplicación CertificateGet emite o renueva un certificado, envía los archivos al agente por HTTPS. El agente los
 escribe donde cada programa los espera, reinicia lo que haga falta e informa de cada paso en el registro de
@@ -277,14 +278,15 @@ objetivo en la aplicación, haga clic en <b>Forget fingerprint</b> y confíe en 
     add('<h2 id="next1"><span class="k">Primeros pasos</span>Adónde ir después</h2>')
     add(nextcards([TG, PG, RF]))
 
-    nav = [('Instalar', ['what', 'build', 'win', 'win-what', 'linux', 'linux-what']),
-           ('Configurar', ['slot', 'app', 'verify']),
-           ('Mantenimiento', ['update', 'update-win', 'update-linux', 'remove']),
+    nav = APP_NAV_GS_ES + [
+           ('Agente: instalar', ['what', 'build', 'win', 'win-what', 'linux', 'linux-what']),
+           ('Agente: configurar', ['slot', 'app', 'verify']),
+           ('Agente: mantenimiento', ['update', 'update-win', 'update-linux', 'remove']),
            ('', ['next1'])]
-    return page(GS, 'Primeros pasos del Agente', 'Volumen 1', 'Primeros pasos',
-                'Compile el agente, instálelo como servicio en Windows o Linux, describa adónde va el certificado '
-                'y conecte la aplicación CertificateGet.',
-                ['Servicio <b>Windows</b>', '<b>systemd</b> en Linux', '<b>HTTPS</b> puerto 9443', '<b>5</b> pasos'],
+    return page(GS, 'Primeros pasos de CertificateGet', 'Volumen 1', 'Primeros pasos',
+                'Instale la aplicación y solicite su primer certificado; después instale el agente en sus servidores '
+                'Windows o Linux, describa adónde va el certificado y conecte la aplicación.',
+                ['<b>Primer</b> certificado', 'Servicio <b>Windows</b>', '<b>systemd</b> en Linux', '<b>HTTPS</b> puerto 9443'],
                 nav, ''.join(B))
 
 # =====================================================================
@@ -292,8 +294,9 @@ objetivo en la aplicación, haga clic en <b>Forget fingerprint</b> y confíe en 
 # =====================================================================
 def build_programmers_guide_es():
     B = []; add = B.append
+    app_programmers_guide_es(add)
 
-    add('<h2 id="model"><span class="k">Conceptos</span>Slots, destinos y archivos</h2>')
+    add('<h2 id="model"><span class="k">Conceptos del agente</span>Slots, destinos y archivos</h2>')
     add('<p>Tres niveles describen adónde va un certificado en un servidor.</p>')
     add(table(['Nivel', 'Qué es', 'Cantidad habitual'], [
         ['<b>Slot</b>', 'Un certificado tal como lo ve el servidor. Un objetivo de despliegue de la aplicación nombra un slot.', 'Uno por certificado, por ejemplo <code>reddin-wildcard</code>.'],
@@ -464,17 +467,18 @@ existe tal sesión, y el programa solo puede iniciarse con <code>"StartIn": "Bac
     add('<h2 id="next2"><span class="k">Guía del programador</span>Adónde ir después</h2>')
     add(nextcards([TG, RF, GS]))
 
-    nav = [('Conceptos', ['model', 'flow', 'failures', 'hot']),
-           ('Archivos', ['writes', 'backups']),
-           ('Reinicios', ['restarts', 'services', 'programs', 'commands']),
-           ('Operación', ['security', 'trouble']),
-           ('Notas de plataforma', ['notes', 'n-selinux', 'n-example', 'n-haproxy', 'n-cockpit', 'n-nettalk', 'n-tsplus', 'n-session']),
+    nav = APP_NAV_PG_ES + [
+           ('Agente: conceptos', ['model', 'flow', 'failures', 'hot']),
+           ('Agente: archivos', ['writes', 'backups']),
+           ('Agente: reinicios', ['restarts', 'services', 'programs', 'commands']),
+           ('Agente: operación', ['security', 'trouble']),
+           ('Agente: notas de plataforma', ['notes', 'n-selinux', 'n-example', 'n-haproxy', 'n-cockpit', 'n-nettalk', 'n-tsplus', 'n-session']),
            ('', ['next2'])]
-    return page(PG, 'Guía del programador del Agente', 'Volumen 2', 'Guía del programador',
-                'Cómo se ejecuta un despliegue desde la aplicación hasta el último reinicio, cómo se tratan los archivos '
-                'y las copias de seguridad, el modelo de seguridad, la solución de problemas y el comportamiento de cada '
-                'plataforma detrás de cada regla.',
-                ['<b>8</b> etapas', 'escritura <b>atómica</b>', 'TLS <b>fijado</b>', '<b>7</b> notas de plataforma'],
+    return page(PG, 'Guía del programador de CertificateGet', 'Volumen 2', 'Guía del programador',
+                'Cómo valida la aplicación, qué autoridad de certificación usar, cómo funcionan los certificados, las '
+                'renovaciones, el despliegue y los secretos; después, cómo se ejecuta un despliegue del agente hasta el '
+                'último reinicio, su modelo de seguridad, la solución de problemas y el comportamiento de cada plataforma.',
+                ['<b>%d</b> métodos de validación' % len(APP_METHODS), '<b>2</b> autoridades', 'escritura <b>atómica</b>', '<b>7</b> notas de plataforma'],
                 nav, ''.join(B))
 
 # =====================================================================
@@ -498,6 +502,7 @@ def _es_json(t):
 
 def build_template_guide_es():
     B = []; add = B.append
+    app_template_guide_es(add)
 
     add('<h2 id="anatomy"><span class="k">agent.json</span>La forma del archivo</h2>')
     add('''<p><code>agent.json</code> está junto al ejecutable. La parte superior del archivo la escribe
@@ -637,17 +642,17 @@ segundo sirve HAProxy y Cockpit en una misma máquina Linux.</p>''')
     add('<h2 id="next3"><span class="k">Guía de plantillas</span>Adónde ir después</h2>')
     add(nextcards([RF, PG, GS]))
 
-    nav = [('agent.json', ['anatomy']),
+    nav = APP_NAV_TG_ES + [('agent.json', ['anatomy']),
            ('NetTalk', ['nettalk', 'nettalk-one', 'nettalk-many', 'nettalk-desktop']),
            ('HAProxy', ['haproxy', 'haproxy-one', 'haproxy-many']),
            ('Cockpit', ['cockpit', 'cockpit-replace', 'cockpit-new', 'cockpit-cmd']),
            ('TSplus', ['tsplus', 'tsplus-15', 'tsplus-jks', 'tsplus-paths']),
            ('Archivos completos', ['together', 'together-win', 'together-linux']),
            ('', ['next3'])]
-    return page(TG, 'Guía de plantillas del Agente', 'Volumen 3', 'Guía de plantillas',
-                'Slots de <code>agent.json</code> listos para NetTalk, HAProxy, Cockpit y TSplus, con el razonamiento '
-                'detrás de cada nombre de archivo y comando.',
-                ['<b>NetTalk</b> servicio y escritorio', '<b>HAProxy</b> PEM combinado', '<b>Cockpit</b> ws-certs.d', '<b>TSplus</b> 15+ y jks'],
+    return page(TG, 'Guía de plantillas de CertificateGet', 'Volumen 3', 'Guía de plantillas',
+                'Recetas para configuraciones habituales en la aplicación y después slots de <code>agent.json</code> listos '
+                'para NetTalk, HAProxy, Cockpit y TSplus, con el razonamiento detrás de cada nombre de archivo y comando.',
+                ['Recetas <b>IIS</b> y SFTP', '<b>NetTalk</b> servicio y escritorio', '<b>HAProxy</b> PEM combinado', '<b>Cockpit</b> ws-certs.d', '<b>TSplus</b> 15+ y jks'],
                 nav, ''.join(B))
 
 # =====================================================================
@@ -655,6 +660,7 @@ segundo sirve HAProxy y Cockpit en una misma máquina Linux.</p>''')
 # =====================================================================
 def build_reference_es():
     B = []; add = B.append
+    app_reference_es(add)
 
     add('<h2 id="root"><span class="k">agent.json</span>Nivel superior</h2>')
     add('<p>%s Los nombres se comparan sin distinguir mayúsculas.</p>' % esc(CLASS_DOC_ES['AgentConfig']))
@@ -752,14 +758,15 @@ IP permitida. Los errores vuelven como <code>{ "error": "…" }</code> con estad
     add('<h2 id="next4"><span class="k">Referencia</span>Adónde ir después</h2>')
     add(nextcards([GS, PG, TG]))
 
-    nav = [('agent.json', ['root', 'slot', 'dest', 'file', 'prog']),
-           ('Valores', ['values', 'sources', 'kinds', 'startin', 'placeholders']),
-           ('Operación', ['cli', 'api', 'req', 'certinfo', 'disk']),
+    nav = APP_NAV_RF_ES + [
+           ('Agente: agent.json', ['root', 'slot', 'dest', 'file', 'prog']),
+           ('Agente: valores', ['values', 'sources', 'kinds', 'startin', 'placeholders']),
+           ('Agente: operación', ['cli', 'api', 'req', 'certinfo', 'disk']),
            ('', ['next4'])]
     nfields = sum(len(CLASSES[c]['props']) for c in ('AgentConfig', 'Slot', 'Destination', 'FileSpec', 'ProgramSpec'))
-    return page(RF, 'Referencia del Agente', 'Volumen 4', 'Referencia',
-                'Cada campo de <code>agent.json</code>, valor permitido, comando y endpoint, generados a partir de las '
-                'fuentes del agente, con una línea de ejemplo en cada campo.',
-                ['<b>%d</b> campos' % nfields, '<b>%d</b> orígenes' % len(SOURCES), '<b>%d</b> comandos' % len(CLI),
+    return page(RF, 'Referencia de CertificateGet', 'Volumen 4', 'Referencia',
+                'Los formatos de archivo, métodos de validación y ajustes de la aplicación, y después cada campo de '
+                '<code>agent.json</code>, valor permitido, comando y endpoint, todo generado a partir de las fuentes.',
+                ['<b>%d</b> formatos' % len(APP_FORMATS), '<b>%d</b> ajustes' % len(APP_SETTINGS), '<b>%d</b> campos del agente' % nfields, '<b>%d</b> orígenes' % len(SOURCES), '<b>%d</b> comandos' % len(CLI),
                  '<b>%d</b> endpoints' % len(ENDPOINTS)],
                 nav, ''.join(B), showfilter=True)
