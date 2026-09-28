@@ -1,0 +1,277 @@
+<html lang="es">
+<title>Guía del programador del Agente</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@400;600&display=swap">
+<style>
+:root{
+  --paper:#fbfcfd; --surface:#f1f5f9; --sunken:#e9eff5; --rule:#d6e0ea;
+  --ink:#0f1720; --soft:#4e5f70; --faint:#728396;
+  --accent:#23629a; --accent-bg:#e4eef6; --accent-rule:#b9d3e6;
+  --teal:#127068; --teal-bg:#e0f1ee;
+  --warn:#8a5a12; --warn-bg:#f7eeda;
+  --t-key:#1f5c91; --t-str:#11695f; --t-num:#8a5a12; --t-com:#7d8ea0;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --paper:#0d131a; --surface:#151d26; --sunken:#111922; --rule:#25313d;
+    --ink:#e2eaf2; --soft:#9aabbc; --faint:#7a8b9d;
+    --accent:#6fadde; --accent-bg:#152738; --accent-rule:#28455f;
+    --teal:#4fb5ab; --teal-bg:#102a29;
+    --warn:#d8a545; --warn-bg:#2b2413;
+    --t-key:#7fb6e3; --t-str:#6cc3b8; --t-num:#d8a545; --t-com:#6f8092;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --paper:#0d131a; --surface:#151d26; --sunken:#111922; --rule:#25313d;
+  --ink:#e2eaf2; --soft:#9aabbc; --faint:#7a8b9d;
+  --accent:#6fadde; --accent-bg:#152738; --accent-rule:#28455f;
+  --teal:#4fb5ab; --teal-bg:#102a29;
+  --warn:#d8a545; --warn-bg:#2b2413;
+  --t-key:#7fb6e3; --t-str:#6cc3b8; --t-num:#d8a545; --t-com:#6f8092;
+}
+*{box-sizing:border-box}
+body{margin:0; background:var(--paper); color:var(--ink);
+  font-family:"IBM Plex Serif",Georgia,serif; font-size:16px; line-height:1.62;
+  -webkit-font-smoothing:antialiased}
+h1,h2,h3,h4,.ui{font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif}
+code,pre,.mono{font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace}
+a{color:var(--accent)}
+a:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:3px}
+.wrap{display:grid; grid-template-columns:280px minmax(0,1fr); align-items:start}
+.side{position:sticky; top:env(safe-area-inset-top,0px); height:100vh; overflow-y:auto; padding:24px 20px 60px;
+  border-right:1px solid var(--rule); background:var(--surface)}
+.brand{font-family:"IBM Plex Sans",sans-serif; font-weight:600; font-size:15px; margin:0 0 14px}
+.brand b{color:var(--accent)}
+.langs{display:flex; gap:4px; margin:0 0 14px; padding:3px; border:1px solid var(--rule); border-radius:7px;
+  background:var(--paper)}
+.langs a{flex:1; text-align:center; padding:4px 8px; border-radius:5px; text-decoration:none;
+  font:500 12px/1.3 "IBM Plex Sans",sans-serif; color:var(--soft)}
+.langs a:hover{background:var(--sunken); color:var(--ink)}
+.langs a.here{background:var(--accent-bg); color:var(--accent)}
+.vols{list-style:none; margin:0 0 18px; padding:0 0 16px; display:flex; flex-direction:column; gap:3px;
+  border-bottom:1px solid var(--rule)}
+.vols a{display:block; padding:7px 10px; border-radius:6px; text-decoration:none;
+  font:500 13px/1.35 "IBM Plex Sans",sans-serif; color:var(--soft); border:1px solid transparent}
+.vols a:hover{background:var(--sunken); color:var(--ink)}
+.vols a.here{background:var(--accent-bg); border-color:var(--accent-rule); color:var(--accent)}
+.vols small{display:block; font:400 11px/1.35 "IBM Plex Sans",sans-serif; color:var(--faint); margin-top:2px}
+.vols a.here small{color:var(--accent)}
+.filter{width:100%; margin:0 0 16px; padding:7px 10px; font:13px/1.4 "IBM Plex Sans",sans-serif;
+  color:var(--ink); background:var(--paper); border:1px solid var(--rule); border-radius:6px}
+.filter:focus{outline:2px solid var(--accent); outline-offset:1px}
+.nav__g{font:600 10.5px/1 "IBM Plex Sans",sans-serif; letter-spacing:.11em; text-transform:uppercase;
+  color:var(--faint); margin:18px 0 8px}
+.nav__l{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:1px}
+.nav__l a{display:block; padding:4px 8px; border-radius:5px; text-decoration:none; color:var(--soft);
+  font:400 13.5px/1.45 "IBM Plex Sans",sans-serif}
+.nav__l a:hover{background:var(--sunken); color:var(--ink)}
+.nav__l a.on{background:var(--accent-bg); color:var(--accent); font-weight:500}
+.main{padding:0 0 120px; min-width:0}
+.inner{max-width:980px; padding:0 40px}
+.hero{padding:52px 40px 30px; border-bottom:1px solid var(--rule);
+  background:linear-gradient(180deg,var(--accent-bg),transparent)}
+.hero .inner{padding:0}
+.eyebrow{font:600 11px/1 "IBM Plex Sans",sans-serif; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--accent); margin:0 0 12px}
+h1{font-size:37px; line-height:1.1; margin:0 0 10px; letter-spacing:-.015em; text-wrap:balance}
+.sub{font-size:17px; color:var(--soft); margin:0 0 18px; max-width:62ch}
+.chips{display:flex; flex-wrap:wrap; gap:8px}
+.chip{font:500 11.5px/1 "IBM Plex Sans",sans-serif; padding:6px 10px; border-radius:99px;
+  border:1px solid var(--rule); background:var(--paper); color:var(--soft)}
+.chip b{color:var(--ink); font-weight:600}
+h2{font-size:26px; margin:60px 0 6px; letter-spacing:-.01em; scroll-margin-top:18px; text-wrap:balance}
+h2 .k{font:600 10.5px/1 "IBM Plex Sans",sans-serif; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--accent); display:block; margin-bottom:9px}
+h3{font-size:17.5px; margin:36px 0 10px; scroll-margin-top:18px; text-wrap:balance}
+h4{font-size:14.5px; margin:24px 0 6px; color:var(--soft); font-weight:600}
+p{margin:0 0 14px; max-width:70ch}
+ul.b,ol.b{max-width:70ch; padding-left:20px; margin:0 0 16px}
+ul.b li,ol.b li{margin:0 0 7px}
+ol.steps{list-style:none; counter-reset:s; padding:0; margin:0 0 20px; max-width:74ch;
+  display:flex; flex-direction:column; gap:12px}
+ol.steps>li{counter-increment:s; display:grid; grid-template-columns:30px minmax(0,1fr); gap:12px}
+ol.steps>li::before{content:counter(s); width:26px; height:26px; border-radius:50%;
+  background:var(--accent-bg); border:1px solid var(--accent-rule); color:var(--accent);
+  font:600 12.5px/24px "IBM Plex Sans",sans-serif; text-align:center; font-variant-numeric:tabular-nums}
+ol.steps>li>div{min-width:0}
+ol.steps .code{margin:8px 0 4px}
+.code{background:var(--sunken); border:1px solid var(--rule); border-left:3px solid var(--accent-rule);
+  border-radius:0 7px 7px 0; padding:14px 16px; overflow-x:auto; margin:0 0 18px;
+  font-size:12.9px; line-height:1.62; position:relative}
+.code code{white-space:pre; color:var(--ink)}
+.code::after{content:attr(data-lang); position:absolute; top:0; right:0; padding:3px 9px;
+  font:500 9.5px/1 "IBM Plex Sans",sans-serif; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--faint); background:var(--surface); border-left:1px solid var(--rule);
+  border-bottom:1px solid var(--rule); border-radius:0 0 0 6px}
+.code--use{margin:7px 0 2px; border-left-color:var(--teal); background:var(--paper);
+  font-size:12.4px; padding:9px 12px}
+.code--use::after{content:'agent.json'; color:var(--teal)}
+.code--sh::after{content:'shell'} .code--resp::after{content:'response'}
+.t-k{color:var(--t-key)} .t-s{color:var(--t-str)} .t-n{color:var(--t-num)} .t-c{color:var(--t-com); font-style:italic}
+p code,li code,td code{background:var(--sunken); border:1px solid var(--rule); border-radius:4px;
+  padding:.06em .34em; font-size:.86em}
+.tw{overflow-x:auto; margin:0 0 20px; border:1px solid var(--rule); border-radius:8px; background:var(--paper)}
+table{border-collapse:collapse; width:100%; font-size:13.5px; font-family:"IBM Plex Sans",sans-serif}
+th{text-align:left; font-weight:600; font-size:11px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--faint); padding:9px 14px; border-bottom:1px solid var(--rule); background:var(--surface)}
+td{padding:10px 14px; border-bottom:1px solid var(--rule); vertical-align:top}
+tr:last-child td{border-bottom:0}
+.fns .fn__n{width:200px; white-space:nowrap}
+.fns .fn__n code{font-size:12.8px; color:var(--accent); font-weight:500; background:none; border:0; padding:0}
+.fns .fn__s code{font-size:12.2px; color:var(--soft); background:none; border:0; padding:0; white-space:pre-wrap}
+.fn__d{margin:5px 0 0; font-family:"IBM Plex Serif",serif; font-size:13.8px; color:var(--ink); max-width:74ch}
+.fn__d code{font-size:.84em}
+.dflt{margin-left:8px; font:500 10.5px/1 "IBM Plex Mono",monospace; color:var(--faint);
+  border:1px solid var(--rule); border-radius:4px; padding:2px 5px; vertical-align:1px}
+.tag{display:inline-block; font:600 10px/1 "IBM Plex Sans",sans-serif; letter-spacing:.06em; text-transform:uppercase;
+  padding:3px 6px; border-radius:4px; background:var(--teal-bg); color:var(--teal); margin-left:6px; vertical-align:1px}
+.tag--warn{background:var(--warn-bg); color:var(--warn)}
+.note{border:1px solid var(--rule); border-left:3px solid var(--accent); background:var(--surface);
+  border-radius:0 7px 7px 0; padding:13px 16px; margin:0 0 18px; max-width:74ch}
+.note--warn{border-left-color:var(--warn); background:var(--warn-bg)}
+.note--ok{border-left-color:var(--teal); background:var(--teal-bg)}
+.note__t{font:600 12px/1.3 "IBM Plex Sans",sans-serif; letter-spacing:.03em; margin:0 0 5px;
+  text-transform:uppercase; color:var(--soft)}
+.note--warn .note__t{color:var(--warn)} .note--ok .note__t{color:var(--teal)}
+.note__b p{margin:0 0 8px; font-size:14.5px} .note__b p:last-child{margin:0}
+.stack{display:flex; flex-direction:column; gap:9px; margin:0 0 22px; max-width:680px}
+.layer{border:1px solid var(--rule); border-radius:8px; padding:12px 15px; background:var(--surface);
+  display:grid; grid-template-columns:130px minmax(0,1fr); gap:14px; align-items:baseline}
+.layer b{font:600 11px/1.4 "IBM Plex Sans",sans-serif; letter-spacing:.06em; text-transform:uppercase; color:var(--accent)}
+.layer.srv b{color:var(--teal)}
+.layer p{margin:0; font-size:14px; color:var(--soft); max-width:none}
+.arrow{text-align:center; color:var(--faint); font-size:12px; margin:-4px 0}
+.next{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; margin:26px 0 0}
+.next a{display:block; padding:14px 16px; border:1px solid var(--rule); border-radius:9px;
+  background:var(--surface); text-decoration:none}
+.next a:hover{border-color:var(--accent-rule); background:var(--accent-bg)}
+.next b{display:block; font:600 14px/1.3 "IBM Plex Sans",sans-serif; color:var(--accent); margin-bottom:3px}
+.next span{font:400 13px/1.45 "IBM Plex Serif",serif; color:var(--soft)}
+.hide{display:none !important}
+footer{margin-top:70px; padding:22px 0 0; border-top:1px solid var(--rule); color:var(--faint);
+  font:400 13px/1.6 "IBM Plex Sans",sans-serif}
+@media (max-width:900px){
+  .wrap{grid-template-columns:1fr}
+  .side{position:static; height:auto; border-right:0; border-bottom:1px solid var(--rule)}
+  .inner,.hero{padding-left:18px; padding-right:18px}
+  .layer{grid-template-columns:1fr; gap:4px}
+  .fns .fn__n{white-space:normal; width:auto}
+  h1{font-size:30px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none !important; transition:none !important}}
+</style>
+<div class="wrap">
+<nav class="side">
+  <p class="brand"><b>CertificateGet</b> Agent</p>
+<nav class="langs" aria-label="Idioma"><a href="https://claude.ai/artifact/Xk9wRJUG5rPquoFTwbCrFe" lang="en">English</a><a href="#" lang="es" class="here" aria-current="true">Español</a></nav><ul class="vols"><li><a href="https://claude.ai/artifact/5G22xWR3cTTfuWabzd1den">1. Primeros pasos<small>Instalar el agente y conectar la aplicación</small></a></li><li><a href="#" class="here">2. Guía del programador<small>Cómo se ejecuta una implementación, seguridad, notas de plataforma</small></a></li><li><a href="https://claude.ai/artifact/P99MLSHwS4nKgr7gTRCAKU">3. Guía de plantillas<small>agent.json para NetTalk, HAProxy, Cockpit, TSplus</small></a></li><li><a href="https://claude.ai/artifact/LV7XNKYtxXtAna9Xkw2CAJ">4. Referencia<small>Cada campo, origen, comando y endpoint</small></a></li></ul><p class="nav__g">Conceptos</p><ul class="nav__l"><li><a href="#model">Slots, destinos y archivos</a></li><li><a href="#flow">Cómo se ejecuta un despliegue</a></li><li><a href="#failures">Cuando un paso falla</a></li><li><a href="#hot">Editar agent.json en un servidor en producción</a></li></ul><p class="nav__g">Archivos</p><ul class="nav__l"><li><a href="#writes">Cómo se escriben los archivos</a></li><li><a href="#backups">Copias de seguridad</a></li></ul><p class="nav__g">Reinicios</p><ul class="nav__l"><li><a href="#restarts">Servicios, programas y comandos</a></li><li><a href="#services">RestartServices</a></li><li><a href="#programs">RestartPrograms</a></li><li><a href="#commands">Commands</a></li></ul><p class="nav__g">Operación</p><ul class="nav__l"><li><a href="#security">Modelo de seguridad</a></li><li><a href="#trouble">Solución de problemas</a></li></ul><p class="nav__g">Notas de plataforma</p><ul class="nav__l"><li><a href="#notes">Notas de plataforma</a></li><li><a href="#n-selinux">SELinux y binarios movidos</a></li><li><a href="#n-example">Copiar el archivo de ejemplo sobre agent.json</a></li><li><a href="#n-haproxy">HAProxy carga todos los archivos de la carpeta crt</a></li><li><a href="#n-cockpit">Cockpit lee el certificado como cockpit-ws</a></li><li><a href="#n-nettalk">NetTalk lee su certificado al arrancar</a></li><li><a href="#n-tsplus">TSplus necesita una contraseña en el PFX</a></li><li><a href="#n-session">Programas de escritorio y la sesión 0</a></li></ul><ul class="nav__l"><li><a href="#next2">Adónde ir después</a></li></ul>
+</nav>
+<main class="main">
+  <header class="hero"><div class="inner">
+    <p class="eyebrow">Volumen 2</p>
+    <h1>Guía del programador</h1>
+    <p class="sub">Cómo se ejecuta un despliegue desde la aplicación hasta el último reinicio, cómo se tratan los archivos y las copias de seguridad, el modelo de seguridad, la solución de problemas y el comportamiento de cada plataforma detrás de cada regla.</p>
+    <div class="chips"><span class="chip"><b>8</b> etapas</span><span class="chip">escritura <b>atómica</b></span><span class="chip">TLS <b>fijado</b></span><span class="chip"><b>7</b> notas de plataforma</span></div>
+  </div></header>
+  <div class="inner"><h2 id="model"><span class="k">Conceptos</span>Slots, destinos y archivos</h2><p>Tres niveles describen adónde va un certificado en un servidor.</p><div class="tw"><table class=""><thead><tr><th>Nivel</th><th>Qué es</th><th>Cantidad habitual</th></tr></thead><tbody><tr><td><b>Slot</b></td><td>Un certificado tal como lo ve el servidor. Un objetivo de despliegue de la aplicación nombra un slot.</td><td>Uno por certificado, por ejemplo <code>reddin-wildcard</code>.</td></tr><tr><td><b>Destino</b></td><td>Un programa que usa el certificado: una carpeta y nombres de archivo, o una importación en TSplus, más lo que hay que reiniciar.</td><td>Uno por instancia de programa.</td></tr><tr><td><b>Archivo</b></td><td>Un <i>origen</i> (el formato, como <code>fullchain</code>) y el nombre de archivo que recibe.</td><td>De uno a tres por destino.</td></tr></tbody></table></div><p>La aplicación nunca decide carpetas ni nombres de archivo por un agente. Pregunta al agente qué orígenes
+necesita el slot y envía esos. Cuando añade una instancia de NetTalk o cambia un nombre de archivo, cambia
+<code>agent.json</code> en el servidor y nada en la aplicación.</p><p>Un agente puede tener muchos slots. Dos certificados desplegados en el mismo servidor son dos slots en el mismo
+archivo, y dos objetivos en la aplicación (uno en cada certificado) que apuntan a la misma URL del agente.</p><h2 id="flow"><span class="k">Conceptos</span>Cómo se ejecuta un despliegue</h2><p>El orden importa al escribir comandos, así que aquí está exactamente como lo ejecuta el agente.</p><div class="stack"><div class="layer "><b>1 · Preguntar</b><p>La aplicación llama a <code>GET /api/slots/{slot}</code> y obtiene la lista de orígenes que necesita el slot.</p></div><div class="arrow">&darr;</div><div class="layer "><b>2 · Enviar</b><p>La aplicación genera esos archivos a partir del certificado emitido y los envía en Base64 a <code>/api/deploy</code>, con la contraseña PFX solo cuando se necesita <code>pfx</code>, <code>p12</code> o <code>encrypted-key</code>.</p></div><div class="arrow">&darr;</div><div class="layer srv"><b>3 · Admitir</b><p>El agente vuelve a leer <code>agent.json</code> y comprueba <code>AllowedIps</code> y la clave de API. Los despliegues se ejecutan de uno en uno.</p></div><div class="arrow">&darr;</div><div class="layer srv"><b>4 · Escribir</b><p>Para cada destino, en orden: respalda el archivo actual y escribe el nuevo de forma atómica. Los destinos TSplus importan en su lugar.</p></div><div class="arrow">&darr;</div><div class="layer srv"><b>5 · Servicios</b><p>Cada entrada <code>RestartServices</code> de los destinos correctos, cada servicio una vez, en el orden en que aparece por primera vez.</p></div><div class="arrow">&darr;</div><div class="layer srv"><b>6 · Programas</b><p>Cada entrada <code>RestartPrograms</code> (Windows), cada ejecutable una vez.</p></div><div class="arrow">&darr;</div><div class="layer srv"><b>7 · Comandos</b><p>Los <code>Commands</code> de cada destino en orden, con <code>{folder}</code> sustituido, y después los <code>Commands</code> del propio slot.</p></div><div class="arrow">&darr;</div><div class="layer "><b>8 · Informar</b><p>Cada paso, bueno o malo, vuelve al registro de actividad de la aplicación y a <code>agent.log</code>.</p></div></div><aside class="note note--warn"><p class="note__t">Los comandos se ejecutan después de todos los reinicios</p><div class="note__b"><p>Los <code>Commands</code> de un destino no se ejecutan justo después de escribir sus archivos; se ejecutan cuando todos los destinos se han escrito y todos los servicios se han reiniciado. Si un comando debe ir antes de un reinicio, deje <code>RestartServices</code> vacío y haga ambas cosas en un solo comando, por ejemplo <code>icacls … &amp;&amp; net stop X &amp;&amp; net start X</code>.</p></div></aside><h3 id="failures">Cuando un paso falla</h3><p>Un paso fallido no detiene el despliegue. Si falla la escritura de un destino, se omiten los reinicios y
+comandos de ese destino y los demás destinos continúan. Un reinicio fallido o un comando con código de salida distinto
+de cero se notifica, y el paso siguiente se ejecuta igualmente. El despliegue queda marcado como fallido en la
+aplicación, con todos los pasos listados, para que pueda ver qué parte funcionó.</p><h2 id="hot"><span class="k">Conceptos</span>Editar agent.json en un servidor en producción</h2><p>El agente vuelve a leer <code>agent.json</code> en cada solicitud. Un slot, destino o nombre de archivo
+nuevo se aplica al siguiente despliegue sin reiniciar. Solo <code>Port</code> se lee al arrancar; después de cambiarlo,
+reinicie el servicio y abra el nuevo puerto en el firewall.</p><p>Un error de sintaxis no detiene el servicio. Las solicitudes se rechazan con un mensaje claro, que la
+aplicación muestra, hasta que se corrija el archivo. <code>check</code> muestra la línea:</p><pre class="code" data-lang="text"><code>ERROR agent.json has a syntax error on line 14 (at $.Slots[0].Destinations[0].Folder):
+        "Folder": "C:\Apps\Web\certificates",
+Common causes: text not inside "quotes", curly quotes instead of straight ", a missing comma between items,
+or a comma after the last item. Backslashes in Windows paths must be doubled (C:\\Apps).</code></pre><h2 id="writes"><span class="k">Archivos</span>Cómo se escriben los archivos</h2><ul class="b"><li><b>De forma atómica.</b> Cada archivo se escribe en <code>&lt;nombre&gt;.cg-tmp</code> y luego se renombra sobre el anterior, así que un programa nunca lee medio archivo.</li><li><b>Las carpetas se crean</b> cuando no existen.</li><li><b>Linux, archivos nuevos:</b> el material de clave (<code>combined</code>, <code>combined-keyfirst</code>, <code>encrypted-key</code>, <code>jks</code>, <code>k8s</code>, <code>key</code>, <code>p12</code>, <code>pfx</code>) recibe modo 600; los demás archivos, 644.</li><li><b>Linux, archivos reemplazados:</b> conservan el propietario, grupo, modo y etiqueta SELinux del archivo que reemplazan (<code>chown --reference</code>, <code>chcon --reference</code>). Un certificado de Cockpit configurado como <code>root:cockpit-ws 640</code> se queda así.</li><li><b>En Windows</b> los archivos heredan los permisos de la carpeta.</li></ul><h2 id="backups"><span class="k">Archivos</span>Copias de seguridad</h2><p>Antes de reemplazar un archivo, el actual se copia en la carpeta propia del agente, nunca junto a los
+archivos en uso. HAProxy carga todos los archivos de su carpeta de certificados, así que un <code>.bak</code> allí
+también se serviría.</p><pre class="code" data-lang="text"><code>&lt;carpeta del agente&gt;/backups/&lt;slot&gt;/&lt;destino&gt;/&lt;yyyyMMdd-HHmmss&gt;/&lt;archivo&gt;
+C:\Program Files\CertificateGet Agent\backups\reddin-wildcard\NetTalk_-_Portal\20260927-031200\portal.crt</code></pre><p><code>KeepBackups</code> (predeterminado 5) es cuántas de esas carpetas fechadas se conservan por destino;
+0 desactiva las copias. Para volver atrás, copie los archivos de una carpeta fechada a su sitio y reinicie el programa,
+o ejecute a mano el comando del destino.</p><h2 id="restarts"><span class="k">Reinicios</span>Servicios, programas y comandos</h2><h3 id="services">RestartServices</h3><p>En Windows, el servicio se detiene (esperando hasta 90 segundos) y luego se inicia (esperando hasta 90
+segundos a que esté <i>Running</i>). En Linux, el agente ejecuta <code>systemctl restart &lt;unidad&gt;</code>. Cada
+nombre se reinicia una sola vez por despliegue, aunque lo incluyan varios destinos.</p><aside class="note note--info"><p class="note__t">Recargue en lugar de reiniciar cuando pueda</p><div class="note__b"><p>Un reinicio corta las conexiones abiertas. Para HAProxy y nginx, deje <code>RestartServices</code> vacío y use una entrada <code>Commands</code> que compruebe la configuración y recargue, por ejemplo <code>haproxy -c -f /etc/haproxy/haproxy.cfg &amp;&amp; systemctl reload haproxy</code>.</p></div></aside><h3 id="programs">RestartPrograms</h3><p>Para programas que se ejecutan en un escritorio en lugar de como servicio, como un servidor NetTalk iniciado
+desde la carpeta Inicio. Para cada copia en ejecución del ejecutable, el agente:</p><ol class="b"><li>anota su línea de comandos completa y la sesión de Windows (escritorio) en la que se ejecuta,</li><li>le pide que se cierre normalmente, como si se hiciera clic en su botón de cerrar,</li><li>lo termina si sigue en ejecución tras <code>StopTimeoutSeconds</code> (predeterminado 20),</li><li>lo vuelve a iniciar en la misma sesión, como el mismo usuario, con la misma línea de comandos,</li><li>comprueba que sigue en ejecución tres segundos después.</li></ol><p>Varias copias con parámetros distintos vuelven cada una con sus propios parámetros. Para que un programa
+vuelva a un escritorio, debe haber un usuario con sesión iniciada, en la consola o en una sesión RDP desconectada. En
+servidores desatendidos use el inicio de sesión automático, o <code>"StartIn": "Background"</code> si no hace falta
+ventana.</p><h3 id="commands">Commands</h3><div class="tw"><table class=""><thead><tr><th></th><th>Windows</th><th>Linux</th></tr></thead><tbody><tr><td>Shell</td><td><code>cmd.exe /c &lt;comando&gt;</code></td><td><code>/bin/sh -c "&lt;comando&gt;"</code></td></tr><tr><td>Se ejecuta como</td><td>LocalSystem</td><td>root</td></tr><tr><td>Límite de tiempo</td><td>2 minutos, después se termina el árbol de procesos</td><td>2 minutos</td></tr><tr><td>Falla cuando</td><td>el código de salida no es 0</td><td>el código de salida no es 0</td></tr><tr><td>Salida</td><td>los primeros 500 caracteres van al registro</td><td>los primeros 500 caracteres van al registro</td></tr></tbody></table></div><p><code>{folder}</code> se sustituye por el <code>Folder</code> del destino. En los <code>Commands</code>
+del propio slot no hay carpeta, así que ahí <code>{folder}</code> queda vacío. Use <code>&amp;&amp;</code> para
+detenerse en el primer fallo y <code>;</code> para continuar pase lo que pase; el resultado del paso es el código de
+salida del último comando ejecutado.</p><h2 id="security"><span class="k">Seguridad</span>Modelo de seguridad</h2><div class="tw"><table class=""><thead><tr><th>Protección</th><th>Cómo funciona</th></tr></thead><tbody><tr><td>Solo TLS</td><td>El agente escucha en HTTPS con su propio certificado. La aplicación fija su huella SHA-256 en la primera conexión, después de que usted la compare con <code>info</code>, y rechaza una distinta más adelante.</td></tr><tr><td>Clave de API</td><td>Se envía en el encabezado <code>X-Api-Key</code>. El agente guarda solo su hash SHA-256 y lo compara en tiempo constante. Una clave incorrecta se registra y se responde tras una espera de 1,5 segundos.</td></tr><tr><td>AllowedIps</td><td>Si la lista no está vacía, solo esas direcciones pueden conectarse (loopback siempre está permitido). Ponga aquí la IP del PC que ejecuta CertificateGet.</td></tr><tr><td>Tamaño de la solicitud</td><td>Se rechazan cuerpos de más de 20 MB.</td></tr><tr><td>De uno en uno</td><td>Los despliegues se ponen en cola, así que dos renovaciones nunca escriben los mismos archivos a la vez.</td></tr></tbody></table></div><aside class="note note--warn"><p class="note__t">Proteja la carpeta del agente</p><div class="note__b"><p>Contiene <code>agent.json</code>, la clave TLS del agente y las copias de seguridad, que incluyen claves privadas. Manténgala legible solo por administradores o root. Quien pueda editar <code>agent.json</code> puede hacer que el agente ejecute un comando como LocalSystem o root.</p></div></aside><p>Para rotar la clave de API, ejecute <code>newkey</code> en el servidor y pegue la nueva clave en cada objetivo de la aplicación que use el agente.</p><h2 id="trouble"><span class="k">Operación</span>Solución de problemas</h2><p>Los mensajes aparecen en inglés, tal como los muestran la aplicación y el agente.</p><div class="tw"><table class=""><thead><tr><th>Lo que ve</th><th>Causa</th><th>Solución</th></tr></thead><tbody><tr><td><i>Invalid API key.</i></td><td>La clave de la aplicación no coincide, o <code>ApiKeyHash</code> es un marcador.</td><td>Ejecute <code>newkey</code> y pegue la clave en el objetivo.</td></tr><tr><td><i>… is not allowed to use this agent.</i></td><td>La IP del PC de la aplicación no está en <code>AllowedIps</code>.</td><td>Añádala. Detrás de NAT, use la dirección que ve el agente (está en <code>agent.log</code>).</td></tr><tr><td><i>The agent's TLS certificate does not match …</i></td><td>El agente se reinstaló o se reemplazó su <code>agent-tls.pfx</code>.</td><td>Compare con <code>info</code>, luego <b>Forget fingerprint</b> en el objetivo y conecte de nuevo.</td></tr><tr><td><i>Slot "x" is not configured on …</i></td><td>El nombre está escrito de forma distinta en la aplicación y en <code>agent.json</code>.</td><td>Use <b>Connect &amp; list slots</b> y haga clic en la etiqueta.</td></tr><tr><td><i>cannot read its configuration</i></td><td>Error de sintaxis JSON en <code>agent.json</code>.</td><td>Ejecute <code>check</code>; indica la línea.</td></tr><tr><td>La conexión agota el tiempo</td><td>Firewall, o el servicio no está en ejecución.</td><td><code>Test-NetConnection host -Port 9443</code> desde el PC de la aplicación; compruebe el servicio.</td></tr><tr><td><code>status=203/EXEC</code> en systemd</td><td>Etiqueta SELinux en un binario movido desde <code>/tmp</code>.</td><td><code>sudo restorecon -v /opt/certificateget-agent/CertificateGet.Agent</code>, o vuelva a ejecutar <code>install</code>.</td></tr><tr><td><i>Windows service "x" not found</i> desde <code>check</code></td><td>El <i>nombre</i> del servicio es distinto de su nombre para mostrar.</td><td><code>Get-Service | Where DisplayName -like "*Web*"</code> y use la columna <code>Name</code>.</td></tr><tr><td><i>Command failed (exit 1)</i></td><td>El propio comando falló; su salida aparece a continuación en el mensaje.</td><td>Ejecute el mismo comando a mano como root / en un símbolo del sistema elevado.</td></tr><tr><td>Cockpit vuelve a su certificado autofirmado</td><td>La clave no es legible por <code>cockpit-ws</code>, u otro archivo va después en orden alfabético.</td><td>Vea la <a href="https://claude.ai/artifact/P99MLSHwS4nKgr7gTRCAKU#cockpit">plantilla de Cockpit</a>.</td></tr></tbody></table></div><h2 id="notes"><span class="k">Notas</span>Notas de plataforma</h2><p>Comportamiento propio del sistema operativo o del programa que recibe el certificado, descubierto al usar el agente en servidores reales.</p><h3 id="n-selinux">SELinux y binarios movidos</h3><p>Un archivo movido con <code>mv</code> conserva la etiqueta SELinux del lugar de origen. Un binario movido
+desde <code>/tmp</code> queda etiquetado <code>user_tmp_t</code>, y systemd no lo inicia, con <code>status=203/EXEC</code>
+y ningún otro mensaje. <code>install</code> etiqueta el agente como <code>bin_t</code>; tras una actualización copie con
+<code>cp</code> o ejecute <code>restorecon</code>. Lo mismo vale para archivos de certificado que coloque a mano, por eso
+el comando de Cockpit ejecuta <code>restorecon -F</code>.</p><h3 id="n-example">Copiar el archivo de ejemplo sobre agent.json</h3><p>Los ejemplos incluidos contienen marcadores para <code>ApiKeyHash</code> y <code>TlsPassword</code>. El agente
+lo soporta: cuando la contraseña TLS no abre <code>agent-tls.pfx</code>, renombra el archivo antiguo a
+<code>agent-tls.pfx.old-&lt;hora&gt;</code> y crea un certificado nuevo (la aplicación le pedirá confiar en la nueva
+huella), y <code>check</code> informa de la clave que falta. Copie de un ejemplo solo la sección <code>Slots</code>.</p><h3 id="n-haproxy">HAProxy carga todos los archivos de la carpeta crt</h3><p>Con <code>crt /etc/haproxy/certs/</code>, HAProxy carga cada archivo de esa carpeta y elige uno por SNI. Una
+copia de seguridad olvidada o un archivo a medio escribir allí también se carga, o impide que HAProxy arranque. Por eso
+el agente escribe de forma atómica y guarda las copias en otro lugar, y por eso el comando de recarga ejecuta primero
+<code>haproxy -c</code>.</p><h3 id="n-cockpit">Cockpit lee el certificado como cockpit-ws</h3><p><code>cockpit-tls</code> se ejecuta como el usuario <code>cockpit-ws</code>, así que la clave (o el
+<code>.cert</code> combinado) debe ser <code>root:cockpit-ws</code> con modo 640. Cockpit usa el <i>último</i> archivo
+<code>.cert</code>/<code>.crt</code> en orden alfabético de <code>/etc/cockpit/ws-certs.d</code>. Tras varios arranques
+fallidos systemd deja de intentarlo, por eso el comando ejecuta <code>systemctl reset-failed</code> antes de reiniciar
+el socket.</p><h3 id="n-nettalk">NetTalk lee su certificado al arrancar</h3><p>Un servidor web NetTalk carga el certificado y la clave cuando empieza a escuchar, así que los archivos nuevos
+no tienen efecto hasta que se reinicia el servicio o el programa. Por eso todo destino NetTalk necesita una entrada
+<code>RestartServices</code> o <code>RestartPrograms</code>.</p><h3 id="n-tsplus">TSplus necesita una contraseña en el PFX</h3><p><code>CertificateManager.exe</code> lee la contraseña de <code>certpassword.txt</code> en su propia carpeta y
+no importa un PFX sin ella. Si el certificado no tiene contraseña PFX en la aplicación, el agente lo envuelve con una
+contraseña aleatoria para la importación. Ambos archivos temporales se eliminan después. Las versiones que usan
+<code>cert.jks</code> esperan la contraseña de almacén <code>secret</code>, la predeterminada de la aplicación.</p><h3 id="n-session">Programas de escritorio y la sesión 0</h3><p>El agente se ejecuta como servicio en la sesión 0, que no tiene escritorio. Para devolver un programa donde el
+usuario pueda verlo, lo inicia en la sesión del usuario con el token de ese usuario. Si nadie ha iniciado sesión no
+existe tal sesión, y el programa solo puede iniciarse con <code>"StartIn": "Background"</code>.</p><h2 id="next2"><span class="k">Guía del programador</span>Adónde ir después</h2><div class="next"><a href="https://claude.ai/artifact/P99MLSHwS4nKgr7gTRCAKU"><b>Guía de plantillas &rarr;</b><span>agent.json para NetTalk, HAProxy, Cockpit, TSplus</span></a><a href="https://claude.ai/artifact/LV7XNKYtxXtAna9Xkw2CAJ"><b>Referencia &rarr;</b><span>Cada campo, origen, comando y endpoint</span></a><a href="https://claude.ai/artifact/5G22xWR3cTTfuWabzd1den"><b>Primeros pasos &rarr;</b><span>Instalar el agente y conectar la aplicación</span></a></div>
+    <footer>CertificateGet Agent &mdash; cuatro volúmenes. La referencia se genera a partir de <code>AgentConfig.cs</code>, <code>ProgramRestarter.cs</code>, <code>Program.cs</code> y <code>Deployer.cs</code>, y los ejemplos completos son los archivos de <code>CertificateGet.Agent/examples</code>, así que los campos, valores predeterminados y comandos son los de la compilación.</footer>
+  </div>
+</main>
+</div>
+<script>
+const q = document.getElementById('filter');
+if (q) {
+  const rows = [...document.querySelectorAll('tr.fn')];
+  q.addEventListener('input', () => {
+    const t = q.value.trim().toLowerCase();
+    rows.forEach(r => r.classList.toggle('hide', t && !r.dataset.k.includes(t)));
+    document.querySelectorAll('.tw').forEach(w => {
+      const body = w.querySelector('tbody');
+      if (!body || !body.querySelector('tr.fn')) return;
+      const any = [...body.querySelectorAll('tr')].some(r => !r.classList.contains('hide'));
+      w.classList.toggle('hide', !any);
+    });
+  });
+}
+/*  Which sidebar entry is lit: by position, not IntersectionObserver.  One click
+    crosses several headings at once, they all arrive in a single callback, and the
+    last one processed wins - which lights the wrong chapter.  */
+const links = [...document.querySelectorAll('.nav__l a')];
+if (links.length) {
+  const byId  = new Map(links.map(a => [a.getAttribute('href').slice(1), a]));
+  const marks = [...document.querySelectorAll('h2[id],h3[id]')].filter(h => byId.has(h.id));
+  const light = a => links.forEach(l => l.classList.toggle('on', l === a));
+  let held = null, holdUntil = 0, queued = false;
+  function spy() {
+    queued = false;
+    if (held) { light(held); return; }
+    let cur = marks[0];
+    for (const h of marks) {
+      if (h.getBoundingClientRect().top <= 120) cur = h; else break;
+    }
+    if (innerHeight + scrollY >= document.documentElement.scrollHeight - 2)
+      cur = marks[marks.length - 1];
+    if (cur) light(byId.get(cur.id));
+  }
+  links.forEach(a => a.addEventListener('click', () => {
+    held = a; holdUntil = performance.now() + 700; light(a);
+  }));
+  const later = () => { if (!queued) { queued = true; requestAnimationFrame(spy); } };
+  addEventListener('scroll', () => {
+    if (held && performance.now() > holdUntil) held = null;
+    later();
+  }, {passive: true});
+  addEventListener('resize', later);
+  if (marks.length) spy();
+}
+</script>

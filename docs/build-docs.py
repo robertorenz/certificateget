@@ -9,6 +9,11 @@
 # Program.cs and Deployer.cs - and the combined examples are read out of
 # CertificateGet.Agent/examples, so a field, default or command here is the one in the build.
 # Run from the repository root after changing the agent:   python docs/build-docs.py
+#
+# Every volume is built twice: in English into docs/ and in Spanish into docs/es/. The Spanish
+# text lives in docs/build-docs-es.py, which is loaded into this namespace and uses the same
+# helpers; the build fails when a Spanish volume's headings differ from the English one's, or
+# when a field, source, kind, command or endpoint has no Spanish description.
 import io, re, html, sys, json, os
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -86,6 +91,7 @@ EX_LINUX  = src(os.path.join('examples', 'agent.linux-haproxy.json'))
 json.loads(EX_WIN); json.loads(EX_LINUX)          # the shipped examples must at least parse
 
 MISSING, PROBLEMS = [], []
+LANG = 'en'                     # set by the build loop; en -> docs/, es -> docs/es/
 
 # ---------------------------------------------------------------- hand-kept words, checked against the sources
 #  Descriptions for fields that carry no /// summary in the source.  A field
@@ -259,29 +265,57 @@ def flow(rows):
     return ''.join(out)
 
 # ---------------------------------------------------------------- volumes
-VOLUMES = [
+VOLUMES = {'en': [
  ('getting-started.html',   'Getting Started',    'Install the agent and connect the app'),
  ('programmers-guide.html', "Programmer's Guide", 'How deployments run, security, platform notes'),
  ('template-guide.html',    'Template Guide',     'agent.json for NetTalk, HAProxy, Cockpit, TSplus'),
  ('reference.html',         'Reference',          'Every field, source, command and endpoint'),
-]
+], 'es': [
+ ('getting-started.html',   'Primeros pasos',       'Instalar el agente y conectar la aplicación'),
+ ('programmers-guide.html', 'Guía del programador', 'Cómo se ejecuta una implementación, seguridad, notas de plataforma'),
+ ('template-guide.html',    'Guía de plantillas',   'agent.json para NetTalk, HAProxy, Cockpit, TSplus'),
+ ('reference.html',         'Referencia',           'Cada campo, origen, comando y endpoint'),
+]}
+
+#  Words of the page frame itself, per language.
+CHROME = {
+ 'en': {'filter': 'Filter', 'filter_ph': 'Folder, combined, check&hellip;', 'lang': 'Language',
+        'footer': 'CertificateGet Agent &mdash; four volumes. The reference is generated from '
+                  '<code>AgentConfig.cs</code>, <code>ProgramRestarter.cs</code>, <code>Program.cs</code> and '
+                  '<code>Deployer.cs</code>, and the combined examples are the files in <code>CertificateGet.Agent/examples</code>, '
+                  'so fields, defaults and commands are the ones in the build.'},
+ 'es': {'filter': 'Filtrar', 'filter_ph': 'Folder, combined, check&hellip;', 'lang': 'Idioma',
+        'footer': 'CertificateGet Agent &mdash; cuatro volúmenes. La referencia se genera a partir de '
+                  '<code>AgentConfig.cs</code>, <code>ProgramRestarter.cs</code>, <code>Program.cs</code> y '
+                  '<code>Deployer.cs</code>, y los ejemplos completos son los archivos de <code>CertificateGet.Agent/examples</code>, '
+                  'así que los campos, valores predeterminados y comandos son los de la compilación.'},
+}
+LANGS = [('en', 'English'), ('es', 'Español')]
 
 #  Published, each volume is its own page on its own address, so a relative
 #  filename does not reach the next one.  Cross-volume links are these absolute
 #  addresses; the local copies in docs/ therefore point at the published set.
-PUBLISHED = {
+PUBLISHED = {'en': {
  'getting-started.html':   'https://claude.ai/artifact/6NUtSWhxsJHAgFg1bsgEjH',
  'programmers-guide.html': 'https://claude.ai/artifact/Xk9wRJUG5rPquoFTwbCrFe',
  'template-guide.html':    'https://claude.ai/artifact/4NaQZxJRzNB1EgG6FPq4i7',
  'reference.html':         'https://claude.ai/artifact/WfYNLoBapj4dsyLWJMPU8s',
-}
+}, 'es': {
+ 'getting-started.html':   'https://claude.ai/artifact/5G22xWR3cTTfuWabzd1den',
+ 'programmers-guide.html': 'https://claude.ai/artifact/1Md1dk2STxaDExvMtmxifP',
+ 'template-guide.html':    'https://claude.ai/artifact/P99MLSHwS4nKgr7gTRCAKU',
+ 'reference.html':         'https://claude.ai/artifact/LV7XNKYtxXtAna9Xkw2CAJ',
+}}
+
+def pub(target, lang=None):
+    return PUBLISHED[lang or LANG].get(target, target)
 
 def href(target, current):
-    return '#' if target == current else PUBLISHED.get(target, target)
+    return '#' if target == current else pub(target)
 
 def xref(target, anchor, text):
     """A link into another volume."""
-    return '<a href="%s#%s">%s</a>' % (PUBLISHED.get(target, target), anchor, text)
+    return '<a href="%s#%s">%s</a>' % (pub(target), anchor, text)
 
 CSS = """
 :root{
@@ -325,6 +359,12 @@ a:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radi
   border-right:1px solid var(--rule); background:var(--surface)}
 .brand{font-family:"IBM Plex Sans",sans-serif; font-weight:600; font-size:15px; margin:0 0 14px}
 .brand b{color:var(--accent)}
+.langs{display:flex; gap:4px; margin:0 0 14px; padding:3px; border:1px solid var(--rule); border-radius:7px;
+  background:var(--paper)}
+.langs a{flex:1; text-align:center; padding:4px 8px; border-radius:5px; text-decoration:none;
+  font:500 12px/1.3 "IBM Plex Sans",sans-serif; color:var(--soft)}
+.langs a:hover{background:var(--sunken); color:var(--ink)}
+.langs a.here{background:var(--accent-bg); color:var(--accent)}
 .vols{list-style:none; margin:0 0 18px; padding:0 0 16px; display:flex; flex-direction:column; gap:3px;
   border-bottom:1px solid var(--rule)}
 .vols a{display:block; padding:7px 10px; border-radius:6px; text-decoration:none;
@@ -488,7 +528,7 @@ if (links.length) {
 
 def volnav(current):
     out = ['<ul class="vols">']
-    for i, (hrefname, name, blurb) in enumerate(VOLUMES):
+    for i, (hrefname, name, blurb) in enumerate(VOLUMES[LANG]):
         here = ' class="here"' if hrefname == current else ''
         out.append('<li><a href="%s"%s>%s. %s<small>%s</small></a></li>'
                    % (href(hrefname, current), here, i + 1, esc(name), esc(blurb)))
@@ -517,31 +557,45 @@ def secnav(groups, titles):
 def nextcards(names):
     cards = []
     for h in names:
-        for hrefname, name, blurb in VOLUMES:
+        for hrefname, name, blurb in VOLUMES[LANG]:
             if hrefname == h:
                 cards.append('<a href="%s"><b>%s &rarr;</b><span>%s</span></a>'
-                             % (PUBLISHED.get(hrefname, hrefname), esc(name), esc(blurb)))
+                             % (pub(hrefname), esc(name), esc(blurb)))
     return '<div class="next">%s</div>' % ''.join(cards)
+
+def langnav(current):
+    #  The same volume in the other language.
+    out = ['<nav class="langs" aria-label="%s">' % CHROME[LANG]['lang']]
+    for lc, name in LANGS:
+        here = ' class="here" aria-current="true"' if lc == LANG else ''
+        out.append('<a href="%s" lang="%s"%s>%s</a>' % ('#' if lc == LANG else pub(current, lc), lc, here, name))
+    out.append('</nav>')
+    return ''.join(out)
+
+HEADINGS = {}                   # (lang, file) -> heading ids, compared across languages after the build
 
 def page(filename, title, eyebrow, heading, sub, chips, groups, body, showfilter=False):
     titles = headings(body)
+    HEADINGS[(LANG, filename)] = list(titles)
+    where = filename if LANG == 'en' else LANG + '/' + filename
     linked = [aid for _, ids in groups for aid in ids]
     for aid in linked:
         if aid not in titles:
-            PROBLEMS.append('%s: the nav points at #%s, which is not a heading' % (filename, aid))
+            PROBLEMS.append('%s: the nav points at #%s, which is not a heading' % (where, aid))
     for aid in titles:
         if aid not in linked:
-            PROBLEMS.append('%s: heading #%s (%s) is in no nav' % (filename, aid, titles[aid]))
+            PROBLEMS.append('%s: heading #%s (%s) is in no nav' % (where, aid, titles[aid]))
     for m in re.finditer(r'href="#([^"]+)"', body):
         if m.group(1) not in titles:
-            PROBLEMS.append('%s: in-page link #%s lands on no heading' % (filename, m.group(1)))
-    nav = volnav(filename) + \
+            PROBLEMS.append('%s: in-page link #%s lands on no heading' % (where, m.group(1)))
+    C = CHROME[LANG]
+    nav = langnav(filename) + volnav(filename) + \
           ('<label class="ui" style="font-size:11px;color:var(--faint);letter-spacing:.08em;'
-           'text-transform:uppercase" for="filter">Filter</label>'
-           '<input id="filter" class="filter" type="search" placeholder="Folder, combined, check&hellip;" '
-           'autocomplete="off">' if showfilter else '') + secnav(groups, titles)
+           'text-transform:uppercase" for="filter">%s</label>'
+           '<input id="filter" class="filter" type="search" placeholder="%s" '
+           'autocomplete="off">' % (C['filter'], C['filter_ph']) if showfilter else '') + secnav(groups, titles)
     chiphtml = ''.join('<span class="chip">%s</span>' % c for c in chips)
-    doc = ('<title>%s</title>\n'
+    doc = ('<html lang="%s">\n<title>%s</title>\n'
            '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n'
            '<link rel="preconnect" href="https://fonts.googleapis.com">\n'
            '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n'
@@ -556,20 +610,24 @@ def page(filename, title, eyebrow, heading, sub, chips, groups, body, showfilter
            '    <p class="eyebrow">%s</p>\n    <h1>%s</h1>\n    <p class="sub">%s</p>\n'
            '    <div class="chips">%s</div>\n'
            '  </div></header>\n  <div class="inner">%s\n'
-           '    <footer>CertificateGet Agent &mdash; four volumes. The reference is generated from '
-           '<code>AgentConfig.cs</code>, <code>ProgramRestarter.cs</code>, <code>Program.cs</code> and '
-           '<code>Deployer.cs</code>, and the combined examples are the files in <code>CertificateGet.Agent/examples</code>, '
-           'so fields, defaults and commands are the ones in the build.</footer>\n'
+           '    <footer>%s</footer>\n'
            '  </div>\n</main>\n</div>\n<script>%s</script>\n'
-           % (esc(title), CSS, nav, esc(eyebrow), esc(heading), sub, chiphtml, body, JS))
-    io.open(os.path.join(ROOT, 'docs', filename), 'w', encoding='utf-8', newline='\n').write(doc)
+           % (LANG, esc(title), CSS, nav, esc(eyebrow), esc(heading), sub, chiphtml, body, C['footer'], JS))
+    sub_ = [] if LANG == 'en' else [LANG]
+    os.makedirs(os.path.join(ROOT, 'docs', *sub_), exist_ok=True)
+    io.open(os.path.join(ROOT, 'docs', *sub_, filename), 'w', encoding='utf-8', newline='\n').write(doc)
     #  The copy built into the app (Help, F1) opens from disk, so there the
     #  volumes link to each other by file name instead of by published address.
+    #  English sits in help/, Spanish in help/es/.
     local = doc
-    for name, url in PUBLISHED.items():
-        local = local.replace(url, name)
-    os.makedirs(os.path.join(ROOT, 'docs', 'help'), exist_ok=True)
-    io.open(os.path.join(ROOT, 'docs', 'help', filename), 'w', encoding='utf-8', newline='\n').write(
+    for lang, urls in PUBLISHED.items():
+        for name, url in urls.items():
+            if lang == LANG: rel = name
+            elif lang == 'en': rel = '../' + name
+            else: rel = lang + '/' + name
+            local = local.replace(url, rel)
+    os.makedirs(os.path.join(ROOT, 'docs', 'help', *sub_), exist_ok=True)
+    io.open(os.path.join(ROOT, 'docs', 'help', *sub_, filename), 'w', encoding='utf-8', newline='\n').write(
         '<!doctype html>\n<meta charset="utf-8">\n' + local)
     return len(doc)
 
@@ -1251,16 +1309,22 @@ desktop program, and into TSplus. The second serves HAProxy and Cockpit on one L
 JSON_TYPE = {'int': 'number', 'string': 'string', 'string?': 'string, optional', 'bool': 'true / false',
              'DateTime': 'date-time string'}
 
+JSON_TYPE_ES = {'int': 'número', 'string': 'cadena', 'string?': 'cadena, opcional', 'bool': 'true / false',
+                'DateTime': 'cadena de fecha y hora'}
+
 def jtype(t):
-    if t in JSON_TYPE: return JSON_TYPE[t]
+    es = LANG == 'es'
+    if t in JSON_TYPE: return (JSON_TYPE_ES if es else JSON_TYPE)[t]
     m = re.match(r'List<(\w+)>', t)
-    if m: return 'array of %s' % ('strings' if m.group(1) == 'string' else m.group(1))
+    if m:
+        if es: return 'arreglo de %s' % ('cadenas' if m.group(1) == 'string' else m.group(1))
+        return 'array of %s' % ('strings' if m.group(1) == 'string' else m.group(1))
     m = re.match(r'Dictionary<string, string>', t)
-    if m: return 'object (name &rarr; string)'
-    return t.rstrip('?') + (', optional' if t.endswith('?') else '')
+    if m: return 'objeto (nombre &rarr; cadena)' if es else 'object (name &rarr; string)'
+    return t.rstrip('?') + ((', opcional' if es else ', optional') if t.endswith('?') else '')
 
 def jdefault(d, t):
-    if not d: return 'none' if t.endswith('?') else ''
+    if not d: return ('ninguno' if LANG == 'es' else 'none') if t.endswith('?') else ''
     if d.startswith('new'): return '[]' if t.startswith('List') else '{}'
     if d.startswith('Guid') or '(' in d: return ''
     return d
@@ -1270,8 +1334,13 @@ def field_rows(clsname, prefix_json=True):
     rows = []
     for pr in cls['props']:
         key = '%s.%s' % (clsname, pr['name'])
-        doc = FIELD_DOC.get(key) or esc(pr['doc'])
-        if not doc: PROBLEMS.append('reference: %s has no /// summary and no FIELD_DOC entry' % key)
+        if LANG == 'es':
+            #  Spanish has no source summaries to fall back on: every field needs an entry.
+            doc = FIELD_DOC_ES.get(key, '')
+            if not doc: PROBLEMS.append('es/reference: %s has no FIELD_DOC_ES entry' % key)
+        else:
+            doc = FIELD_DOC.get(key) or esc(pr['doc'])
+            if not doc: PROBLEMS.append('reference: %s has no /// summary and no FIELD_DOC entry' % key)
         use = USAGE.get(key)
         if use is None: MISSING.append(key)
         d = jdefault(pr['default'], pr['type'])
@@ -1279,7 +1348,7 @@ def field_rows(clsname, prefix_json=True):
         rows.append('<tr class="fn" data-k="%s"><td class="fn__n"><code>%s</code></td>'
                     '<td class="fn__s"><code>%s</code>%s<p class="fn__d">%s</p>%s</td></tr>'
                     % (esc((clsname + ' ' + pr['name'] + ' ' + re.sub('<[^>]+>', '', doc)).lower()), esc(name),
-                       jtype(pr['type']), '<span class="dflt">default %s</span>' % esc(d) if d else '',
+                       jtype(pr['type']), '<span class="dflt">%s %s</span>' % ('predeterminado' if LANG == 'es' else 'default', esc(d)) if d else '',
                        doc, usecode(use) if use else ''))
     return '<div class="tw"><table class="fns"><tbody>%s</tbody></table></div>' % ''.join(rows)
 
@@ -1398,18 +1467,37 @@ Errors come back as <code>{ "error": "…" }</code> with status 401 (key), 403 (
                 nav, ''.join(B), showfilter=True)
 
 # =====================================================================
+#  The Spanish volumes: same helpers, same checks, their own words.
+exec(compile(io.open(os.path.join(ROOT, 'docs', 'build-docs-es.py'), encoding='utf-8').read(),
+             'build-docs-es.py', 'exec'))
+
 if __name__ == '__main__':
     total = 0
-    for fn, build in ((GS, build_getting_started), (PG, build_programmers_guide),
-                      (TG, build_template_guide), (RF, build_reference)):
-        kb = build()
-        print('  docs/%-24s %6.1f KB' % (fn, kb / 1024.0))
-        total += kb
-    print('  %-29s %6.1f KB' % ('four volumes', total / 1024.0))
+    for LANG, builds, folder in (
+            ('en', ((GS, build_getting_started), (PG, build_programmers_guide),
+                    (TG, build_template_guide), (RF, build_reference)), 'docs/'),
+            ('es', ((GS, build_getting_started_es), (PG, build_programmers_guide_es),
+                    (TG, build_template_guide_es), (RF, build_reference_es)), 'docs/es/')):
+        for fn, build in builds:
+            kb = build()
+            print('  %-29s %6.1f KB' % (folder + fn, kb / 1024.0))
+            total += kb
+    print('  %-29s %6.1f KB' % ('eight volumes (en + es)', total / 1024.0))
+    #  A Spanish volume carries exactly the English volume's headings, in the same order.
+    for fn in (GS, PG, TG, RF):
+        en, es = HEADINGS.get(('en', fn), []), HEADINGS.get(('es', fn), [])
+        if en != es:
+            PROBLEMS.append('es/%s: headings differ from the English volume (missing %s, extra %s)'
+                            % (fn, sorted(set(en) - set(es)) or '-', sorted(set(es) - set(en)) or '-'))
+    for name, en_, es_ in (('FIELD_DOC', FIELD_DOC, FIELD_DOC_ES), ('SOURCE_DOC', SOURCE_DOC, SOURCE_DOC_ES),
+                           ('KIND_DOC', KIND_DOC, KIND_DOC_ES), ('STARTIN_DOC', STARTIN_DOC, STARTIN_DOC_ES),
+                           ('CLI_USE', CLI_USE, CLI_USE_ES), ('ENDPOINT_DOC', ENDPOINT_DOC, ENDPOINT_DOC_ES)):
+        for k in en_:
+            if k not in es_: PROBLEMS.append('es: %s has "%s" with no %s_ES entry' % (name, k, name))
     if MISSING: print('  !! no worked example for: ' + ', '.join(sorted(set(MISSING))))
     else: print('  every field has a worked example')
     if PROBLEMS:
         for line in PROBLEMS: print('  !! ' + line)
     else: print('  every nav entry names the heading it lands on')
-    if any('PENDING' in u for u in PUBLISHED.values()): print('  !! PUBLISHED still has placeholder addresses')
+    if any('PENDING' in u for urls in PUBLISHED.values() for u in urls.values()): print('  !! PUBLISHED still has placeholder addresses')
     sys.exit(1 if (MISSING or PROBLEMS) else 0)

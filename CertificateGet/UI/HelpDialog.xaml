@@ -15,15 +15,24 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <StackPanel Orientation="Horizontal" Margin="24,22,24,10">
-                <Border Width="38" Height="38" CornerRadius="19" Background="{StaticResource PrimarySoftBrush}" Margin="0,0,14,0">
-                    <TextBlock Text="&#xE897;" Style="{StaticResource Icon}" FontSize="17" Foreground="{StaticResource PrimaryBrush}" HorizontalAlignment="Center"/>
-                </Border>
-                <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="CertificateGet Agent manual" FontSize="17" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
-                    <TextBlock Text="Four volumes. Each opens in your browser, and they link to each other." Style="{StaticResource PageSubtitle}" Margin="0,2,0,0"/>
+            <Grid Margin="24,22,24,10">
+                <StackPanel Orientation="Horizontal">
+                    <Border Width="38" Height="38" CornerRadius="19" Background="{StaticResource PrimarySoftBrush}" Margin="0,0,14,0">
+                        <TextBlock Text="&#xE897;" Style="{StaticResource Icon}" FontSize="17" Foreground="{StaticResource PrimaryBrush}" HorizontalAlignment="Center"/>
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock x:Name="TitleText" Text="CertificateGet Agent manual" FontSize="17" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
+                        <TextBlock x:Name="SubtitleText" Text="Four volumes. Each opens in your browser, and they link to each other." Style="{StaticResource PageSubtitle}" Margin="0,2,0,0"/>
+                    </StackPanel>
                 </StackPanel>
-            </StackPanel>
+                <Border Background="{StaticResource CardAltBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8"
+                        HorizontalAlignment="Right" VerticalAlignment="Top">
+                    <StackPanel Orientation="Horizontal">
+                        <RadioButton x:Name="LangEn" Content="English" Style="{StaticResource PillChoice}" GroupName="helplang" Checked="Lang_Changed"/>
+                        <RadioButton x:Name="LangEs" Content="Español" Style="{StaticResource PillChoice}" GroupName="helplang" Checked="Lang_Changed"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
 
             <ItemsControl x:Name="VolumeList" Grid.Row="1" Margin="24,6,24,14">
                 <ItemsControl.ItemTemplate>
@@ -69,8 +78,8 @@
             <Border Grid.Row="2" Background="{StaticResource CardAltBrush}" CornerRadius="0,0,12,12" Padding="20,12"
                     BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0">
                 <Grid>
-                    <TextBlock Text="Press F1 anywhere to open this list." VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource TextMutedBrush}"/>
-                    <Button Content="Close" Click="Close_Click" Style="{StaticResource SecondaryButton}" HorizontalAlignment="Right" IsCancel="True"/>
+                    <TextBlock x:Name="FooterText" Text="Press F1 anywhere to open this list." VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource TextMutedBrush}"/>
+                    <Button x:Name="CloseButton" Content="Close" Click="Close_Click" Style="{StaticResource SecondaryButton}" HorizontalAlignment="Right" IsCancel="True"/>
                 </Grid>
             </Border>
         </Grid>

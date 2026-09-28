@@ -1,0 +1,291 @@
+<html lang="es">
+<title>Primeros pasos del Agente</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@400;600&display=swap">
+<style>
+:root{
+  --paper:#fbfcfd; --surface:#f1f5f9; --sunken:#e9eff5; --rule:#d6e0ea;
+  --ink:#0f1720; --soft:#4e5f70; --faint:#728396;
+  --accent:#23629a; --accent-bg:#e4eef6; --accent-rule:#b9d3e6;
+  --teal:#127068; --teal-bg:#e0f1ee;
+  --warn:#8a5a12; --warn-bg:#f7eeda;
+  --t-key:#1f5c91; --t-str:#11695f; --t-num:#8a5a12; --t-com:#7d8ea0;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --paper:#0d131a; --surface:#151d26; --sunken:#111922; --rule:#25313d;
+    --ink:#e2eaf2; --soft:#9aabbc; --faint:#7a8b9d;
+    --accent:#6fadde; --accent-bg:#152738; --accent-rule:#28455f;
+    --teal:#4fb5ab; --teal-bg:#102a29;
+    --warn:#d8a545; --warn-bg:#2b2413;
+    --t-key:#7fb6e3; --t-str:#6cc3b8; --t-num:#d8a545; --t-com:#6f8092;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --paper:#0d131a; --surface:#151d26; --sunken:#111922; --rule:#25313d;
+  --ink:#e2eaf2; --soft:#9aabbc; --faint:#7a8b9d;
+  --accent:#6fadde; --accent-bg:#152738; --accent-rule:#28455f;
+  --teal:#4fb5ab; --teal-bg:#102a29;
+  --warn:#d8a545; --warn-bg:#2b2413;
+  --t-key:#7fb6e3; --t-str:#6cc3b8; --t-num:#d8a545; --t-com:#6f8092;
+}
+*{box-sizing:border-box}
+body{margin:0; background:var(--paper); color:var(--ink);
+  font-family:"IBM Plex Serif",Georgia,serif; font-size:16px; line-height:1.62;
+  -webkit-font-smoothing:antialiased}
+h1,h2,h3,h4,.ui{font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif}
+code,pre,.mono{font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace}
+a{color:var(--accent)}
+a:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:3px}
+.wrap{display:grid; grid-template-columns:280px minmax(0,1fr); align-items:start}
+.side{position:sticky; top:env(safe-area-inset-top,0px); height:100vh; overflow-y:auto; padding:24px 20px 60px;
+  border-right:1px solid var(--rule); background:var(--surface)}
+.brand{font-family:"IBM Plex Sans",sans-serif; font-weight:600; font-size:15px; margin:0 0 14px}
+.brand b{color:var(--accent)}
+.langs{display:flex; gap:4px; margin:0 0 14px; padding:3px; border:1px solid var(--rule); border-radius:7px;
+  background:var(--paper)}
+.langs a{flex:1; text-align:center; padding:4px 8px; border-radius:5px; text-decoration:none;
+  font:500 12px/1.3 "IBM Plex Sans",sans-serif; color:var(--soft)}
+.langs a:hover{background:var(--sunken); color:var(--ink)}
+.langs a.here{background:var(--accent-bg); color:var(--accent)}
+.vols{list-style:none; margin:0 0 18px; padding:0 0 16px; display:flex; flex-direction:column; gap:3px;
+  border-bottom:1px solid var(--rule)}
+.vols a{display:block; padding:7px 10px; border-radius:6px; text-decoration:none;
+  font:500 13px/1.35 "IBM Plex Sans",sans-serif; color:var(--soft); border:1px solid transparent}
+.vols a:hover{background:var(--sunken); color:var(--ink)}
+.vols a.here{background:var(--accent-bg); border-color:var(--accent-rule); color:var(--accent)}
+.vols small{display:block; font:400 11px/1.35 "IBM Plex Sans",sans-serif; color:var(--faint); margin-top:2px}
+.vols a.here small{color:var(--accent)}
+.filter{width:100%; margin:0 0 16px; padding:7px 10px; font:13px/1.4 "IBM Plex Sans",sans-serif;
+  color:var(--ink); background:var(--paper); border:1px solid var(--rule); border-radius:6px}
+.filter:focus{outline:2px solid var(--accent); outline-offset:1px}
+.nav__g{font:600 10.5px/1 "IBM Plex Sans",sans-serif; letter-spacing:.11em; text-transform:uppercase;
+  color:var(--faint); margin:18px 0 8px}
+.nav__l{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:1px}
+.nav__l a{display:block; padding:4px 8px; border-radius:5px; text-decoration:none; color:var(--soft);
+  font:400 13.5px/1.45 "IBM Plex Sans",sans-serif}
+.nav__l a:hover{background:var(--sunken); color:var(--ink)}
+.nav__l a.on{background:var(--accent-bg); color:var(--accent); font-weight:500}
+.main{padding:0 0 120px; min-width:0}
+.inner{max-width:980px; padding:0 40px}
+.hero{padding:52px 40px 30px; border-bottom:1px solid var(--rule);
+  background:linear-gradient(180deg,var(--accent-bg),transparent)}
+.hero .inner{padding:0}
+.eyebrow{font:600 11px/1 "IBM Plex Sans",sans-serif; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--accent); margin:0 0 12px}
+h1{font-size:37px; line-height:1.1; margin:0 0 10px; letter-spacing:-.015em; text-wrap:balance}
+.sub{font-size:17px; color:var(--soft); margin:0 0 18px; max-width:62ch}
+.chips{display:flex; flex-wrap:wrap; gap:8px}
+.chip{font:500 11.5px/1 "IBM Plex Sans",sans-serif; padding:6px 10px; border-radius:99px;
+  border:1px solid var(--rule); background:var(--paper); color:var(--soft)}
+.chip b{color:var(--ink); font-weight:600}
+h2{font-size:26px; margin:60px 0 6px; letter-spacing:-.01em; scroll-margin-top:18px; text-wrap:balance}
+h2 .k{font:600 10.5px/1 "IBM Plex Sans",sans-serif; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--accent); display:block; margin-bottom:9px}
+h3{font-size:17.5px; margin:36px 0 10px; scroll-margin-top:18px; text-wrap:balance}
+h4{font-size:14.5px; margin:24px 0 6px; color:var(--soft); font-weight:600}
+p{margin:0 0 14px; max-width:70ch}
+ul.b,ol.b{max-width:70ch; padding-left:20px; margin:0 0 16px}
+ul.b li,ol.b li{margin:0 0 7px}
+ol.steps{list-style:none; counter-reset:s; padding:0; margin:0 0 20px; max-width:74ch;
+  display:flex; flex-direction:column; gap:12px}
+ol.steps>li{counter-increment:s; display:grid; grid-template-columns:30px minmax(0,1fr); gap:12px}
+ol.steps>li::before{content:counter(s); width:26px; height:26px; border-radius:50%;
+  background:var(--accent-bg); border:1px solid var(--accent-rule); color:var(--accent);
+  font:600 12.5px/24px "IBM Plex Sans",sans-serif; text-align:center; font-variant-numeric:tabular-nums}
+ol.steps>li>div{min-width:0}
+ol.steps .code{margin:8px 0 4px}
+.code{background:var(--sunken); border:1px solid var(--rule); border-left:3px solid var(--accent-rule);
+  border-radius:0 7px 7px 0; padding:14px 16px; overflow-x:auto; margin:0 0 18px;
+  font-size:12.9px; line-height:1.62; position:relative}
+.code code{white-space:pre; color:var(--ink)}
+.code::after{content:attr(data-lang); position:absolute; top:0; right:0; padding:3px 9px;
+  font:500 9.5px/1 "IBM Plex Sans",sans-serif; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--faint); background:var(--surface); border-left:1px solid var(--rule);
+  border-bottom:1px solid var(--rule); border-radius:0 0 0 6px}
+.code--use{margin:7px 0 2px; border-left-color:var(--teal); background:var(--paper);
+  font-size:12.4px; padding:9px 12px}
+.code--use::after{content:'agent.json'; color:var(--teal)}
+.code--sh::after{content:'shell'} .code--resp::after{content:'response'}
+.t-k{color:var(--t-key)} .t-s{color:var(--t-str)} .t-n{color:var(--t-num)} .t-c{color:var(--t-com); font-style:italic}
+p code,li code,td code{background:var(--sunken); border:1px solid var(--rule); border-radius:4px;
+  padding:.06em .34em; font-size:.86em}
+.tw{overflow-x:auto; margin:0 0 20px; border:1px solid var(--rule); border-radius:8px; background:var(--paper)}
+table{border-collapse:collapse; width:100%; font-size:13.5px; font-family:"IBM Plex Sans",sans-serif}
+th{text-align:left; font-weight:600; font-size:11px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--faint); padding:9px 14px; border-bottom:1px solid var(--rule); background:var(--surface)}
+td{padding:10px 14px; border-bottom:1px solid var(--rule); vertical-align:top}
+tr:last-child td{border-bottom:0}
+.fns .fn__n{width:200px; white-space:nowrap}
+.fns .fn__n code{font-size:12.8px; color:var(--accent); font-weight:500; background:none; border:0; padding:0}
+.fns .fn__s code{font-size:12.2px; color:var(--soft); background:none; border:0; padding:0; white-space:pre-wrap}
+.fn__d{margin:5px 0 0; font-family:"IBM Plex Serif",serif; font-size:13.8px; color:var(--ink); max-width:74ch}
+.fn__d code{font-size:.84em}
+.dflt{margin-left:8px; font:500 10.5px/1 "IBM Plex Mono",monospace; color:var(--faint);
+  border:1px solid var(--rule); border-radius:4px; padding:2px 5px; vertical-align:1px}
+.tag{display:inline-block; font:600 10px/1 "IBM Plex Sans",sans-serif; letter-spacing:.06em; text-transform:uppercase;
+  padding:3px 6px; border-radius:4px; background:var(--teal-bg); color:var(--teal); margin-left:6px; vertical-align:1px}
+.tag--warn{background:var(--warn-bg); color:var(--warn)}
+.note{border:1px solid var(--rule); border-left:3px solid var(--accent); background:var(--surface);
+  border-radius:0 7px 7px 0; padding:13px 16px; margin:0 0 18px; max-width:74ch}
+.note--warn{border-left-color:var(--warn); background:var(--warn-bg)}
+.note--ok{border-left-color:var(--teal); background:var(--teal-bg)}
+.note__t{font:600 12px/1.3 "IBM Plex Sans",sans-serif; letter-spacing:.03em; margin:0 0 5px;
+  text-transform:uppercase; color:var(--soft)}
+.note--warn .note__t{color:var(--warn)} .note--ok .note__t{color:var(--teal)}
+.note__b p{margin:0 0 8px; font-size:14.5px} .note__b p:last-child{margin:0}
+.stack{display:flex; flex-direction:column; gap:9px; margin:0 0 22px; max-width:680px}
+.layer{border:1px solid var(--rule); border-radius:8px; padding:12px 15px; background:var(--surface);
+  display:grid; grid-template-columns:130px minmax(0,1fr); gap:14px; align-items:baseline}
+.layer b{font:600 11px/1.4 "IBM Plex Sans",sans-serif; letter-spacing:.06em; text-transform:uppercase; color:var(--accent)}
+.layer.srv b{color:var(--teal)}
+.layer p{margin:0; font-size:14px; color:var(--soft); max-width:none}
+.arrow{text-align:center; color:var(--faint); font-size:12px; margin:-4px 0}
+.next{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; margin:26px 0 0}
+.next a{display:block; padding:14px 16px; border:1px solid var(--rule); border-radius:9px;
+  background:var(--surface); text-decoration:none}
+.next a:hover{border-color:var(--accent-rule); background:var(--accent-bg)}
+.next b{display:block; font:600 14px/1.3 "IBM Plex Sans",sans-serif; color:var(--accent); margin-bottom:3px}
+.next span{font:400 13px/1.45 "IBM Plex Serif",serif; color:var(--soft)}
+.hide{display:none !important}
+footer{margin-top:70px; padding:22px 0 0; border-top:1px solid var(--rule); color:var(--faint);
+  font:400 13px/1.6 "IBM Plex Sans",sans-serif}
+@media (max-width:900px){
+  .wrap{grid-template-columns:1fr}
+  .side{position:static; height:auto; border-right:0; border-bottom:1px solid var(--rule)}
+  .inner,.hero{padding-left:18px; padding-right:18px}
+  .layer{grid-template-columns:1fr; gap:4px}
+  .fns .fn__n{white-space:normal; width:auto}
+  h1{font-size:30px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none !important; transition:none !important}}
+</style>
+<div class="wrap">
+<nav class="side">
+  <p class="brand"><b>CertificateGet</b> Agent</p>
+<nav class="langs" aria-label="Idioma"><a href="https://claude.ai/artifact/6NUtSWhxsJHAgFg1bsgEjH" lang="en">English</a><a href="#" lang="es" class="here" aria-current="true">Español</a></nav><ul class="vols"><li><a href="#" class="here">1. Primeros pasos<small>Instalar el agente y conectar la aplicación</small></a></li><li><a href="https://claude.ai/artifact/1Md1dk2STxaDExvMtmxifP">2. Guía del programador<small>Cómo se ejecuta una implementación, seguridad, notas de plataforma</small></a></li><li><a href="https://claude.ai/artifact/P99MLSHwS4nKgr7gTRCAKU">3. Guía de plantillas<small>agent.json para NetTalk, HAProxy, Cockpit, TSplus</small></a></li><li><a href="https://claude.ai/artifact/LV7XNKYtxXtAna9Xkw2CAJ">4. Referencia<small>Cada campo, origen, comando y endpoint</small></a></li></ul><p class="nav__g">Instalar</p><ul class="nav__l"><li><a href="#what">Qué hace el agente</a></li><li><a href="#build">Obtener los ejecutables</a></li><li><a href="#win">Instalar en Windows</a></li><li><a href="#win-what">Qué cambia install en Windows</a></li><li><a href="#linux">Instalar en Linux</a></li><li><a href="#linux-what">Qué cambia install en Linux</a></li></ul><p class="nav__g">Configurar</p><ul class="nav__l"><li><a href="#slot">Describir adónde va el certificado</a></li><li><a href="#app">Conectar la aplicación</a></li><li><a href="#verify">Comprobar el primer despliegue</a></li></ul><p class="nav__g">Mantenimiento</p><ul class="nav__l"><li><a href="#update">Actualizar, mover o quitar el agente</a></li><li><a href="#update-win">Actualizar en Windows</a></li><li><a href="#update-linux">Actualizar en Linux</a></li><li><a href="#remove">Quitar o reinstalar</a></li></ul><ul class="nav__l"><li><a href="#next1">Adónde ir después</a></li></ul>
+</nav>
+<main class="main">
+  <header class="hero"><div class="inner">
+    <p class="eyebrow">Volumen 1</p>
+    <h1>Primeros pasos</h1>
+    <p class="sub">Compile el agente, instálelo como servicio en Windows o Linux, describa adónde va el certificado y conecte la aplicación CertificateGet.</p>
+    <div class="chips"><span class="chip">Servicio <b>Windows</b></span><span class="chip"><b>systemd</b> en Linux</span><span class="chip"><b>HTTPS</b> puerto 9443</span><span class="chip"><b>5</b> pasos</span></div>
+  </div></header>
+  <div class="inner"><h2 id="what"><span class="k">Introducción</span>Qué hace el agente</h2><p>El agente es un pequeño servicio que se instala en cada servidor que usa un certificado. Cuando la
+aplicación CertificateGet emite o renueva un certificado, envía los archivos al agente por HTTPS. El agente los
+escribe donde cada programa los espera, reinicia lo que haga falta e informa de cada paso en el registro de
+actividad de la aplicación.</p><div class="stack"><div class="layer "><b>CertificateGet</b><p>La aplicación de escritorio de su PC emite o renueva el certificado con Let's Encrypt.</p></div><div class="arrow">&darr;</div><div class="layer "><b>HTTPS :9443</b><p>La aplicación pregunta al agente qué archivos necesita el slot y envía exactamente esos. Comprueba la huella TLS fijada del agente y envía la clave de API.</p></div><div class="arrow">&darr;</div><div class="layer srv"><b>Agente</b><p>Un servicio de Windows o una unidad systemd en el servidor. Lee <code>agent.json</code>, busca el slot y respalda los archivos actuales.</p></div><div class="arrow">&darr;</div><div class="layer srv"><b>Destinos</b><p>Archivos escritos en cada carpeta con los nombres que espera cada programa, o importados en TSplus.</p></div><div class="arrow">&darr;</div><div class="layer srv"><b>Reinicios</b><p>Servicios, programas de escritorio y comandos (por ejemplo <code>systemctl reload haproxy</code>), cada uno una vez.</p></div></div><p>Use el agente en servidores que necesitan algo más que copiar un archivo: varias instancias de NetTalk con
+sus propios nombres de archivo, TSplus, programas de escritorio que hay que reiniciar en el escritorio de un usuario.
+Para un solo servidor Linux donde basta con subir el archivo y ejecutar un comando, el objetivo SFTP de la aplicación
+funciona sin instalar nada.</p><h2 id="build"><span class="k">Paso 1</span>Obtener los ejecutables</h2><p>Compile ambos agentes con el script de publicación de la raíz del repositorio. Son archivos únicos
+autocontenidos, así que los servidores no necesitan el runtime de .NET.</p><pre class="code" data-lang="powershell"><code>.\publish.ps1
+<span class="t-c"># run\agent-windows\CertificateGet.Agent.exe   servidores Windows (NetTalk, TSplus, IIS)</span>
+<span class="t-c"># run\agent-linux\CertificateGet.Agent         servidores Linux (HAProxy, Cockpit, nginx), x64</span></code></pre><p>Cada carpeta de salida recibe además <code>README.md</code> y <code>agent.example.json</code>. El ejemplo es
+para leerlo. No lo copie sobre <code>agent.json</code>: contiene marcadores en lugar del hash real de la clave y de la
+contraseña TLS.</p><h2 id="win"><span class="k">Paso 2a</span>Instalar en Windows</h2><p>Hágalo en el servidor que ejecuta NetTalk, TSplus u otros programas que usan el certificado.</p><ol class="steps"><li><div><b>Copie el ejecutable</b> a una carpeta propia. El agente guarda <code>agent.json</code>, su certificado TLS, el registro y las copias de seguridad junto al ejecutable.<pre class="code" data-lang="powershell"><code>New-Item -ItemType Directory "C:\Program Files\CertificateGet Agent" -Force
+Copy-Item .\CertificateGet.Agent.exe "C:\Program Files\CertificateGet Agent\"</code></pre></div></li><li><div><b>Abra PowerShell como administrador</b> y ejecute <code>install</code>. Añada un número de puerto si el 9443 está ocupado.<pre class="code" data-lang="powershell"><code>cd "C:\Program Files\CertificateGet Agent"
+.\CertificateGet.Agent.exe install<span class="t-c">          # o bien: .\CertificateGet.Agent.exe install 9543</span></code></pre></div></li><li><div><b>Copie los tres valores que muestra.</b> La clave de API solo se muestra esta vez. (El agente escribe en inglés.)<pre class="code" data-lang="text"><code>Installed. Enter these in CertificateGet → certificate → Deployment → Add target → Agent:
+  URL          https://WEB01:9443
+  API key      q3ZtY0n8…Kd4      (shown once — store it now)
+  Fingerprint  5E1B7C…90AF   (the app asks you to confirm this on first connect)</code></pre></div></li><li><div><b>Compruebe el servicio.</b> <code>info</code> vuelve a mostrar la URL y la huella en cualquier momento.<pre class="code" data-lang="powershell"><code>Get-Service CertificateGetAgent
+.\CertificateGet.Agent.exe info</code></pre></div></li></ol><h3 id="win-what">Qué cambia install en Windows</h3><div class="tw"><table class=""><thead><tr><th>Elemento</th><th>Detalle</th></tr></thead><tbody><tr><td>Servicio</td><td><code>CertificateGetAgent</code> (nombre para mostrar <i>CertificateGet Agent</i>), inicio automático retrasado, se ejecuta como LocalSystem, Windows lo reinicia 60 segundos después de un fallo.</td></tr><tr><td>Firewall</td><td>Regla de entrada <i>CertificateGet Agent</i> para el puerto TCP.</td></tr><tr><td><code>agent.json</code></td><td>Se crea con un slot de ejemplo, salvo que ya exista. Se guarda el hash de la clave de API, nunca la clave.</td></tr><tr><td><code>agent-tls.pfx</code></td><td>Certificado TLS autofirmado del agente, válido 20 años. La aplicación fija su huella SHA-256.</td></tr></tbody></table></div><h2 id="linux"><span class="k">Paso 2b</span>Instalar en Linux</h2><p>Para HAProxy, Cockpit, nginx y otros servicios de Linux. El agente se ejecuta como root porque escribe en <code>/etc</code> y reinicia servicios.</p><ol class="steps"><li><div><b>Copie el binario al servidor.</b><pre class="code" data-lang="bash"><code>scp run/agent-linux/CertificateGet.Agent admin@lb01:/tmp/</code></pre></div></li><li><div><b>Póngalo en su propia carpeta.</b> Use <code>cp</code>, no <code>mv</code>: en sistemas con SELinux, un archivo movido desde <code>/tmp</code> conserva una etiqueta con la que systemd se niega a ejecutarlo.<pre class="code" data-lang="bash"><code>sudo mkdir -p /opt/certificateget-agent
+sudo cp /tmp/CertificateGet.Agent /opt/certificateget-agent/
+sudo chmod +x /opt/certificateget-agent/CertificateGet.Agent</code></pre></div></li><li><div><b>Instale.</b> Copie la URL, la clave de API y la huella que muestra.<pre class="code" data-lang="bash"><code>cd /opt/certificateget-agent
+sudo ./CertificateGet.Agent install<span class="t-c">         # o bien: sudo ./CertificateGet.Agent install 9543</span></code></pre></div></li><li><div><b>Abra el puerto.</b> Solo una de estas líneas corresponde a su distribución.<pre class="code" data-lang="bash"><code>sudo ufw allow 9443/tcp<span class="t-c">                                                          # Ubuntu / Debian</span>
+sudo firewall-cmd --permanent --add-port=9443/tcp &amp;&amp; sudo firewall-cmd --reload<span class="t-c">  # RHEL / Rocky / Alma / Fedora</span></code></pre></div></li><li><div><b>Compruebe que está en ejecución.</b><pre class="code" data-lang="bash"><code>systemctl status certificateget-agent
+sudo ./CertificateGet.Agent info
+journalctl -u certificateget-agent -f<span class="t-c">          # registro en vivo; las mismas líneas van a agent.log</span></code></pre></div></li></ol><h3 id="linux-what">Qué cambia install en Linux</h3><div class="tw"><table class=""><thead><tr><th>Elemento</th><th>Detalle</th></tr></thead><tbody><tr><td>Unidad systemd</td><td><code>/etc/systemd/system/certificateget-agent.service</code>, <code>Type=notify</code>, <code>Restart=on-failure</code>, habilitada e iniciada.</td></tr><tr><td>SELinux</td><td>Con SELinux habilitado, el ejecutable se etiqueta <code>bin_t</code> (<code>semanage fcontext</code> + <code>restorecon</code>, o <code>chcon</code> como alternativa).</td></tr><tr><td>Firewall</td><td>No se toca. Abra el puerto usted mismo (paso 4).</td></tr><tr><td>Archivos</td><td><code>agent.json</code> y <code>agent-tls.pfx</code> se crean con modo 600.</td></tr></tbody></table></div><h2 id="slot"><span class="k">Paso 3</span>Describir adónde va el certificado</h2><p>Abra <code>agent.json</code> junto al ejecutable y reemplace el slot de ejemplo. Un <b>slot</b> es aquello a
+lo que apunta un certificado en la aplicación; cada slot enumera <b>destinos</b>, y cada destino indica qué archivos
+escribir, dónde, y qué reiniciar. Este escribe un certificado y una clave para un servicio NetTalk:</p><pre class="code" data-lang="json"><code>{
+  <span class="t-k">"Port"</span>: <span class="t-n">9443</span>,
+  <span class="t-k">"ApiKeyHash"</span>: <span class="t-s">"…tal como lo escribió install…"</span>,
+  <span class="t-k">"AllowedIps"</span>: [],
+  <span class="t-k">"TlsPfx"</span>: <span class="t-s">"agent-tls.pfx"</span>,
+  <span class="t-k">"TlsPassword"</span>: <span class="t-s">"…tal como lo escribió install…"</span>,
+  <span class="t-k">"KeepBackups"</span>: <span class="t-n">5</span>,
+  <span class="t-k">"Slots"</span>: [
+    {
+      <span class="t-k">"Name"</span>: <span class="t-s">"example-com"</span>,
+      <span class="t-k">"Description"</span>: <span class="t-s">"www.example.com para el servidor web NetTalk"</span>,
+      <span class="t-k">"Destinations"</span>: [
+        {
+          <span class="t-k">"Name"</span>: <span class="t-s">"NetTalk web"</span>,
+          <span class="t-k">"Folder"</span>: <span class="t-s">"C:\\Apps\\Web\\certificates"</span>,
+          <span class="t-k">"Files"</span>: [
+            { <span class="t-k">"Source"</span>: <span class="t-s">"fullchain"</span>, <span class="t-k">"FileName"</span>: <span class="t-s">"www.example.com.crt"</span> },
+            { <span class="t-k">"Source"</span>: <span class="t-s">"key"</span>,       <span class="t-k">"FileName"</span>: <span class="t-s">"www.example.com.key"</span> }
+          ],
+          <span class="t-k">"RestartServices"</span>: [ <span class="t-s">"WebServer"</span> ]
+        }
+      ]
+    }
+  ]
+}</code></pre><p>Después, valídelo. El agente vuelve a leer el archivo en cada solicitud, así que no hace falta reiniciar (salvo tras cambiar <code>Port</code>).</p><pre class="code" data-lang="powershell"><code>.\CertificateGet.Agent.exe check</code></pre><pre class="code" data-lang="text"><code>Slot "example-com"
+  • NetTalk web
+OK — configuration looks good.</code></pre><p>Hay archivos listos para NetTalk, HAProxy, Cockpit y TSplus en la <a href="https://claude.ai/artifact/P99MLSHwS4nKgr7gTRCAKU#nettalk">Guía de plantillas</a>; cada campo está en la <a href="https://claude.ai/artifact/LV7XNKYtxXtAna9Xkw2CAJ#root">Referencia</a>.</p><aside class="note note--warn"><p class="note__t">Rutas de Windows en JSON</p><div class="note__b"><p>Cada barra invertida se escribe dos veces: <code>"C:\\Apps\\Web"</code>. Una sola barra invertida es un error de sintaxis JSON, y <code>check</code> muestra la línea.</p></div></aside><h2 id="app"><span class="k">Paso 4</span>Conectar la aplicación</h2><p>En CertificateGet, en el PC que emite los certificados (la interfaz está en inglés):</p><ol class="steps"><li><div>Abra <b>Certificates</b>, seleccione el certificado y, en la sección <b>Deployment</b>, haga clic en <b>Add target</b>.</div></li><li><div>Elija <b>CertificateGet Agent</b>. Escriba un <b>Name</b> (por ejemplo <i>WEB01 NetTalk</i>), la <b>Agent URL</b> (<code>https://WEB01:9443</code>) y la <b>API key</b>.</div></li><li><div>Haga clic en <b>Connect &amp; list slots</b>. La primera vez, un cuadro de diálogo muestra la huella TLS del agente. Compárela con la salida de <code>info</code> en el servidor y haga clic en <b>Trust</b>. A partir de entonces la aplicación rechaza cualquier otro certificado en esa URL.</div></li><li><div>Haga clic en la etiqueta del slot (por ejemplo <code>example-com</code>) para rellenar <b>Slot on the agent</b>.</div></li><li><div>Deje marcadas <b>Enabled</b> y <b>Deploy automatically after every issuance / renewal</b>, y luego <b>Save target</b>.</div></li><li><div>Haga clic en <b>Deploy now</b> para enviar el certificado actual de inmediato.</div></li></ol><p>Estos cuatro volúmenes también están incluidos en la aplicación: haga clic en <b>Help</b> al pie de la barra lateral, o pulse <b>F1</b>, y elija <b>Español</b>.</p><h2 id="verify"><span class="k">Paso 5</span>Comprobar el primer despliegue</h2><p>El <b>Activity log</b> de la aplicación muestra una línea por cada paso del agente. Un despliegue correcto se ve así:</p><pre class="code" data-lang="text"><code>NetTalk web: wrote www.example.com.crt, www.example.com.key to C:\Apps\Web\certificates
+Restarted service WebServer</code></pre><p>En el servidor, las mismas líneas están en <code>agent.log</code> junto al ejecutable, y los archivos anteriores en <code>backups\example-com\NetTalk_web\&lt;fecha-hora&gt;\</code>. Compruebe qué presenta ahora el servidor:</p><pre class="code" data-lang="bash"><code>openssl s_client -connect www.example.com:443 -servername www.example.com &lt;/dev/null 2&gt;/dev/null \
+  | openssl x509 -noout -subject -issuer -enddate</code></pre><h2 id="update"><span class="k">Mantenimiento</span>Actualizar, mover o quitar el agente</h2><h3 id="update-win">Actualizar en Windows</h3><pre class="code" data-lang="powershell"><code>sc.exe stop CertificateGetAgent
+Copy-Item .\CertificateGet.Agent.exe "C:\Program Files\CertificateGet Agent\" -Force
+sc.exe start CertificateGetAgent</code></pre><h3 id="update-linux">Actualizar en Linux</h3><pre class="code" data-lang="bash"><code>sudo systemctl stop certificateget-agent
+sudo cp /tmp/CertificateGet.Agent /opt/certificateget-agent/CertificateGet.Agent
+sudo restorecon -v /opt/certificateget-agent/CertificateGet.Agent<span class="t-c">    # solo sistemas con SELinux</span>
+sudo systemctl start certificateget-agent</code></pre><h3 id="remove">Quitar o reinstalar</h3><p><code>uninstall</code> elimina el servicio y (en Windows) la regla de firewall, y conserva
+<code>agent.json</code>, el certificado TLS y las copias de seguridad. Volver a ejecutar <code>install</code> conserva la
+configuración y la clave de API existentes. Si el certificado TLS es nuevo (una carpeta nueva u otro servidor), abra el
+objetivo en la aplicación, haga clic en <b>Forget fingerprint</b> y confíe en la nueva huella en la siguiente conexión.</p><h2 id="next1"><span class="k">Primeros pasos</span>Adónde ir después</h2><div class="next"><a href="https://claude.ai/artifact/P99MLSHwS4nKgr7gTRCAKU"><b>Guía de plantillas &rarr;</b><span>agent.json para NetTalk, HAProxy, Cockpit, TSplus</span></a><a href="https://claude.ai/artifact/1Md1dk2STxaDExvMtmxifP"><b>Guía del programador &rarr;</b><span>Cómo se ejecuta una implementación, seguridad, notas de plataforma</span></a><a href="https://claude.ai/artifact/LV7XNKYtxXtAna9Xkw2CAJ"><b>Referencia &rarr;</b><span>Cada campo, origen, comando y endpoint</span></a></div>
+    <footer>CertificateGet Agent &mdash; cuatro volúmenes. La referencia se genera a partir de <code>AgentConfig.cs</code>, <code>ProgramRestarter.cs</code>, <code>Program.cs</code> y <code>Deployer.cs</code>, y los ejemplos completos son los archivos de <code>CertificateGet.Agent/examples</code>, así que los campos, valores predeterminados y comandos son los de la compilación.</footer>
+  </div>
+</main>
+</div>
+<script>
+const q = document.getElementById('filter');
+if (q) {
+  const rows = [...document.querySelectorAll('tr.fn')];
+  q.addEventListener('input', () => {
+    const t = q.value.trim().toLowerCase();
+    rows.forEach(r => r.classList.toggle('hide', t && !r.dataset.k.includes(t)));
+    document.querySelectorAll('.tw').forEach(w => {
+      const body = w.querySelector('tbody');
+      if (!body || !body.querySelector('tr.fn')) return;
+      const any = [...body.querySelectorAll('tr')].some(r => !r.classList.contains('hide'));
+      w.classList.toggle('hide', !any);
+    });
+  });
+}
+/*  Which sidebar entry is lit: by position, not IntersectionObserver.  One click
+    crosses several headings at once, they all arrive in a single callback, and the
+    last one processed wins - which lights the wrong chapter.  */
+const links = [...document.querySelectorAll('.nav__l a')];
+if (links.length) {
+  const byId  = new Map(links.map(a => [a.getAttribute('href').slice(1), a]));
+  const marks = [...document.querySelectorAll('h2[id],h3[id]')].filter(h => byId.has(h.id));
+  const light = a => links.forEach(l => l.classList.toggle('on', l === a));
+  let held = null, holdUntil = 0, queued = false;
+  function spy() {
+    queued = false;
+    if (held) { light(held); return; }
+    let cur = marks[0];
+    for (const h of marks) {
+      if (h.getBoundingClientRect().top <= 120) cur = h; else break;
+    }
+    if (innerHeight + scrollY >= document.documentElement.scrollHeight - 2)
+      cur = marks[marks.length - 1];
+    if (cur) light(byId.get(cur.id));
+  }
+  links.forEach(a => a.addEventListener('click', () => {
+    held = a; holdUntil = performance.now() + 700; light(a);
+  }));
+  const later = () => { if (!queued) { queued = true; requestAnimationFrame(spy); } };
+  addEventListener('scroll', () => {
+    if (held && performance.now() > holdUntil) held = null;
+    later();
+  }, {passive: true});
+  addEventListener('resize', later);
+  if (marks.length) spy();
+}
+</script>

@@ -1,5 +1,6 @@
 <!doctype html>
 <meta charset="utf-8">
+<html lang="en">
 <title>Agent Getting Started</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -47,6 +48,12 @@ a:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radi
   border-right:1px solid var(--rule); background:var(--surface)}
 .brand{font-family:"IBM Plex Sans",sans-serif; font-weight:600; font-size:15px; margin:0 0 14px}
 .brand b{color:var(--accent)}
+.langs{display:flex; gap:4px; margin:0 0 14px; padding:3px; border:1px solid var(--rule); border-radius:7px;
+  background:var(--paper)}
+.langs a{flex:1; text-align:center; padding:4px 8px; border-radius:5px; text-decoration:none;
+  font:500 12px/1.3 "IBM Plex Sans",sans-serif; color:var(--soft)}
+.langs a:hover{background:var(--sunken); color:var(--ink)}
+.langs a.here{background:var(--accent-bg); color:var(--accent)}
 .vols{list-style:none; margin:0 0 18px; padding:0 0 16px; display:flex; flex-direction:column; gap:3px;
   border-bottom:1px solid var(--rule)}
 .vols a{display:block; padding:7px 10px; border-radius:6px; text-decoration:none;
@@ -162,7 +169,7 @@ footer{margin-top:70px; padding:22px 0 0; border-top:1px solid var(--rule); colo
 <div class="wrap">
 <nav class="side">
   <p class="brand"><b>CertificateGet</b> Agent</p>
-<ul class="vols"><li><a href="#" class="here">1. Getting Started<small>Install the agent and connect the app</small></a></li><li><a href="programmers-guide.html">2. Programmer's Guide<small>How deployments run, security, platform notes</small></a></li><li><a href="template-guide.html">3. Template Guide<small>agent.json for NetTalk, HAProxy, Cockpit, TSplus</small></a></li><li><a href="reference.html">4. Reference<small>Every field, source, command and endpoint</small></a></li></ul><p class="nav__g">Install</p><ul class="nav__l"><li><a href="#what">What the agent does</a></li><li><a href="#build">Get the executables</a></li><li><a href="#win">Install on Windows</a></li><li><a href="#win-what">What install changes on Windows</a></li><li><a href="#linux">Install on Linux</a></li><li><a href="#linux-what">What install changes on Linux</a></li></ul><p class="nav__g">Configure</p><ul class="nav__l"><li><a href="#slot">Describe where the certificate goes</a></li><li><a href="#app">Connect the app</a></li><li><a href="#verify">Check the first deployment</a></li></ul><p class="nav__g">Maintenance</p><ul class="nav__l"><li><a href="#update">Update, move or remove the agent</a></li><li><a href="#update-win">Update on Windows</a></li><li><a href="#update-linux">Update on Linux</a></li><li><a href="#remove">Remove or reinstall</a></li></ul><ul class="nav__l"><li><a href="#next1">Where to go next</a></li></ul>
+<nav class="langs" aria-label="Language"><a href="#" lang="en" class="here" aria-current="true">English</a><a href="es/getting-started.html" lang="es">Español</a></nav><ul class="vols"><li><a href="#" class="here">1. Getting Started<small>Install the agent and connect the app</small></a></li><li><a href="programmers-guide.html">2. Programmer's Guide<small>How deployments run, security, platform notes</small></a></li><li><a href="template-guide.html">3. Template Guide<small>agent.json for NetTalk, HAProxy, Cockpit, TSplus</small></a></li><li><a href="reference.html">4. Reference<small>Every field, source, command and endpoint</small></a></li></ul><p class="nav__g">Install</p><ul class="nav__l"><li><a href="#what">What the agent does</a></li><li><a href="#build">Get the executables</a></li><li><a href="#win">Install on Windows</a></li><li><a href="#win-what">What install changes on Windows</a></li><li><a href="#linux">Install on Linux</a></li><li><a href="#linux-what">What install changes on Linux</a></li></ul><p class="nav__g">Configure</p><ul class="nav__l"><li><a href="#slot">Describe where the certificate goes</a></li><li><a href="#app">Connect the app</a></li><li><a href="#verify">Check the first deployment</a></li></ul><p class="nav__g">Maintenance</p><ul class="nav__l"><li><a href="#update">Update, move or remove the agent</a></li><li><a href="#update-win">Update on Windows</a></li><li><a href="#update-linux">Update on Linux</a></li><li><a href="#remove">Remove or reinstall</a></li></ul><ul class="nav__l"><li><a href="#next1">Where to go next</a></li></ul>
 </nav>
 <main class="main">
   <header class="hero"><div class="inner">

@@ -18,9 +18,10 @@
     <None Remove="Assets\icon-256.png" />
   </ItemGroup>
 
-  <!-- The agent manual (docs/help, written by docs/build-docs.py), opened by Help / F1 -->
+  <!-- The agent manual (docs/help in English, docs/help/es in Spanish, written by docs/build-docs.py), opened by Help / F1 -->
   <ItemGroup>
     <EmbeddedResource Include="..\docs\help\*.html" LogicalName="help.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="..\docs\help\es\*.html" LogicalName="help.es.%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>
