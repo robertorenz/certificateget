@@ -37,6 +37,9 @@ public partial class SettingsView : UserControl
         EmailBox.Text = s.DefaultEmail ?? "";
         EnvStaging.IsChecked = s.DefaultEnvironment == AcmeEnvironment.Staging;
         EnvProduction.IsChecked = s.DefaultEnvironment == AcmeEnvironment.Production;
+        CaLetsEncrypt.IsChecked = s.DefaultAuthority == CertificateAuthority.LetsEncrypt;
+        CaZeroSsl.IsChecked = s.DefaultAuthority == CertificateAuthority.ZeroSsl;
+        ZeroSslKeyBox.Password = s.ProtectedZeroSslApiKey != null ? TokenUnchanged : "";
         foreach (ComboBoxItem i in KeyTypeBox.Items)
             if ((string)i.Tag == s.DefaultKeyType.ToString()) KeyTypeBox.SelectedItem = i;
         WarnDaysBox.Text = s.RenewWarningDays.ToString();
@@ -72,19 +75,18 @@ public partial class SettingsView : UserControl
     private void LoadAccounts()
     {
         var lines = new List<string>();
-        foreach (var env in new[] { "staging", "production" })
+        foreach (var (file, label) in new[] { ("staging", "Let's Encrypt Staging"), ("production", "Let's Encrypt Production"), ("zerossl", "ZeroSSL") })
         {
-            var f = Path.Combine(SettingsService.AccountsPath, env + ".json");
-            if (!File.Exists(f)) { lines.Add($"{Cap(env)}: no account yet (created automatically on first request)."); continue; }
+            var f = Path.Combine(SettingsService.AccountsPath, file + ".json");
+            if (!File.Exists(f)) { lines.Add($"{label}: no account yet (created automatically on first request)."); continue; }
             try
             {
                 var rec = JsonSerializer.Deserialize<AcmeAccountRecord>(File.ReadAllText(f), Json.Options);
-                lines.Add($"{Cap(env)}: created {rec?.CreatedUtc.ToLocalTime():yyyy-MM-dd}{(string.IsNullOrEmpty(rec?.Email) ? "" : " · " + rec.Email)}");
+                lines.Add($"{label}: created {rec?.CreatedUtc.ToLocalTime():yyyy-MM-dd}{(string.IsNullOrEmpty(rec?.Email) ? "" : " · " + rec.Email)}");
             }
-            catch { lines.Add($"{Cap(env)}: unreadable account file."); }
+            catch { lines.Add($"{label}: unreadable account file."); }
         }
         AccountsText.Text = string.Join("\n", lines);
-        static string Cap(string s) => char.ToUpper(s[0]) + s[1..];
     }
 
     private void BrowseStore_Click(object sender, RoutedEventArgs e)
@@ -281,11 +283,11 @@ public partial class SettingsView : UserControl
 
     private void ResetAccounts_Click(object sender, RoutedEventArgs e)
     {
-        if (!Modal.Confirm("Reset Let's Encrypt accounts",
+        if (!Modal.Confirm("Reset ACME accounts",
                 "Delete the stored ACME account keys? New accounts are created on the next request. Issued certificates are not affected.",
                 "Reset", "Cancel", danger: true)) return;
         foreach (var f in Directory.GetFiles(SettingsService.AccountsPath, "*.json")) File.Delete(f);
-        ActivityLog.Warning("Account", "Stored Let's Encrypt accounts were reset.");
+        ActivityLog.Warning("Account", "Stored ACME accounts were reset.");
         LoadAccounts();
     }
 
@@ -337,6 +339,10 @@ public partial class SettingsView : UserControl
             StorePath = store,
             DefaultEmail = string.IsNullOrWhiteSpace(EmailBox.Text) ? null : EmailBox.Text.Trim(),
             DefaultEnvironment = EnvProduction.IsChecked == true ? AcmeEnvironment.Production : AcmeEnvironment.Staging,
+            DefaultAuthority = CaZeroSsl.IsChecked == true ? CertificateAuthority.ZeroSsl : CertificateAuthority.LetsEncrypt,
+            ProtectedZeroSslApiKey = ZeroSslKeyBox.Password == TokenUnchanged
+                ? old.ProtectedZeroSslApiKey
+                : Secret.Protect(ZeroSslKeyBox.Password.Trim()),
             DefaultKeyType = Enum.Parse<CertKeyType>((string)((ComboBoxItem)KeyTypeBox.SelectedItem).Tag),
             RenewWarningDays = warn,
             KeyFormatPkcs8 = KeyPkcs8.IsChecked == true,

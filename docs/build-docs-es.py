@@ -60,7 +60,7 @@ SOURCE_DOC_ES = {
  'crt':               ('PEM', 'Solo el certificado, los mismos bytes que <code>cer</code>.'),
  'der':               ('binario', 'Solo el certificado, codificado en DER. Java y algunas herramientas de Windows.'),
  'chain':             ('PEM', 'Solo los intermedios. <code>SSLCertificateChainFile</code> de Apache.'),
- 'fullchain-root':    ('PEM', 'Cadena completa más la raíz ISRG, para dispositivos que validan toda la cadena.'),
+ 'fullchain-root':    ('PEM', 'Cadena completa más la raíz, para dispositivos que validan toda la cadena.'),
  'encrypted-key':     ('PEM', 'Clave privada cifrada con la contraseña PFX del certificado.'),
  'pfx':               ('PKCS#12', 'Certificado, cadena y clave, protegidos con la contraseña PFX del certificado. IIS, Exchange, Windows.'),
  'p12':               ('PKCS#12', 'Lo mismo que <code>pfx</code> con extensión <code>.p12</code>. Java/Tomcat, macOS.'),
@@ -118,7 +118,7 @@ aplicación CertificateGet emite o renueva un certificado, envía los archivos a
 escribe donde cada programa los espera, reinicia lo que haga falta e informa de cada paso en el registro de
 actividad de la aplicación.</p>''')
     add(flow([
-        ('CertificateGet', 'La aplicación de escritorio de su PC emite o renueva el certificado con Let\'s Encrypt.', ''),
+        ('CertificateGet', 'La aplicación de escritorio de su PC emite o renueva el certificado con Let\'s Encrypt o ZeroSSL.', ''),
         ('HTTPS :9443', 'La aplicación pregunta al agente qué archivos necesita el slot y envía exactamente esos. Comprueba la huella TLS fijada del agente y envía la clave de API.', ''),
         ('Agente', 'Un servicio de Windows o una unidad systemd en el servidor. Lee <code>agent.json</code>, busca el slot y respalda los archivos actuales.', 'srv'),
         ('Destinos', 'Archivos escritos en cada carpeta con los nombres que espera cada programa, o importados en TSplus.', 'srv'),

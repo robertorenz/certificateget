@@ -52,7 +52,7 @@ public static class CertFileKind
         new(Certbot, "Certbot-style names", "cert.pem, privkey.pem, chain.pem and fullchain.pem — the names Linux guides, Synology, Home Assistant, Proxmox and Docker images expect.",
             _ => new[] { "cert.pem", "privkey.pem", "chain.pem", "fullchain.pem" }),
         F(EncryptedKey, "KEY (encrypted)", "Private key protected with the PFX password, BEGIN ENCRYPTED PRIVATE KEY (FortiGate, Sophos, Cisco, Apache with passphrase).", pwd: true),
-        F(FullChainRoot, "Full chain + root", "Certificate + intermediates + the ISRG root, for devices that validate the whole chain on import."),
+        F(FullChainRoot, "Full chain + root", "Certificate + intermediates + the root, for devices that validate the whole chain on import."),
         F(CombinedKeyFirst, "Combined PEM (key first)", "Private key followed by the full chain (Postfix smtpd_tls_chain_files, lighttpd, Pound)."),
         F(P12, "P12", "Same content as the PFX with a .p12 extension (Java/Tomcat keystores, macOS Keychain, Android)."),
         F(Crt, "CRT (PEM)", "The certificate only, PEM, with the .crt extension Linux and Apache use."),

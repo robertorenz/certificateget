@@ -9,7 +9,7 @@
 
         <StackPanel Margin="0,0,0,20">
             <TextBlock x:Name="PageTitle" Text="New certificate" Style="{StaticResource PageTitle}"/>
-            <TextBlock x:Name="PageSubtitle" Text="Choose the domains, how Let's Encrypt should verify you control them, and the output options." Style="{StaticResource PageSubtitle}"/>
+            <TextBlock x:Name="PageSubtitle" Text="Choose the domains, how the certificate authority should verify you control them, and the output options." Style="{StaticResource PageSubtitle}"/>
         </StackPanel>
 
         <Grid Grid.Row="1">
@@ -64,7 +64,7 @@
                                 <Border Background="{StaticResource AccentSoftBrush}" CornerRadius="6" Padding="12,9" Margin="0,12,0,0">
                                     <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="#115E59">
                                         A wildcard covers every first-level subdomain (www, mail, api…) but not the bare domain itself or deeper levels like a.b.example.com.
-                                        Let's Encrypt only allows DNS validation for wildcards.
+                                        Wildcards can only be validated through DNS.
                                     </TextBlock>
                                 </Border>
                             </StackPanel>
@@ -92,7 +92,7 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Text="Port" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="{StaticResource TextMutedBrush}"/>
                                 <TextBox x:Name="PortBox" Grid.Column="1" Width="80" Text="80"/>
-                                <TextBlock Grid.Column="2" Style="{StaticResource Hint}" VerticalAlignment="Center" Margin="12,0,0,0" Text="Let's Encrypt always connects to port 80 — use another port only behind a port-forward."/>
+                                <TextBlock Grid.Column="2" Style="{StaticResource Hint}" VerticalAlignment="Center" Margin="12,0,0,0" Text="The certificate authority always connects to port 80 — use another port only behind a port-forward."/>
                             </Grid>
 
                             <RadioButton x:Name="MHttpWebRoot" Style="{StaticResource OptionCard}" GroupName="method" Checked="Method_Changed">
@@ -163,14 +163,25 @@
                         <StackPanel>
                             <TextBlock Text="3 · Options" Style="{StaticResource SectionTitle}"/>
 
-                            <TextBlock Text="Let's Encrypt environment" Style="{StaticResource FieldLabel}" Margin="0,0,0,5"/>
+                            <TextBlock Text="Certificate authority" Style="{StaticResource FieldLabel}" Margin="0,0,0,5"/>
                             <Border Background="{StaticResource CardAltBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8" HorizontalAlignment="Left">
                                 <StackPanel Orientation="Horizontal">
-                                    <RadioButton x:Name="EnvStaging" Content="Staging (test)" Style="{StaticResource PillChoice}" GroupName="env" IsChecked="True"/>
-                                    <RadioButton x:Name="EnvProduction" Content="Production (trusted)" Style="{StaticResource PillChoice}" GroupName="env"/>
+                                    <RadioButton x:Name="CaLetsEncrypt" Content="Let's Encrypt" Style="{StaticResource PillChoice}" GroupName="ca" IsChecked="True" Checked="Ca_Changed"/>
+                                    <RadioButton x:Name="CaZeroSsl" Content="ZeroSSL" Style="{StaticResource PillChoice}" GroupName="ca" Checked="Ca_Changed"/>
                                 </StackPanel>
                             </Border>
-                            <TextBlock Style="{StaticResource Hint}" Text="Staging has generous rate limits but issues untrusted certificates — use it to test your setup, then switch to Production."/>
+                            <TextBlock x:Name="CaHint" Style="{StaticResource Hint}"/>
+
+                            <StackPanel x:Name="EnvPanel">
+                                <TextBlock Text="Let's Encrypt environment" Style="{StaticResource FieldLabel}" Margin="0,0,0,5"/>
+                                <Border Background="{StaticResource CardAltBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8" HorizontalAlignment="Left">
+                                    <StackPanel Orientation="Horizontal">
+                                        <RadioButton x:Name="EnvStaging" Content="Staging (test)" Style="{StaticResource PillChoice}" GroupName="env" IsChecked="True"/>
+                                        <RadioButton x:Name="EnvProduction" Content="Production (trusted)" Style="{StaticResource PillChoice}" GroupName="env"/>
+                                    </StackPanel>
+                                </Border>
+                                <TextBlock Style="{StaticResource Hint}" Text="Staging has generous rate limits but issues untrusted certificates — use it to test your setup, then switch to Production."/>
+                            </StackPanel>
 
                             <Grid Margin="0,4,0,0">
                                 <Grid.ColumnDefinitions>

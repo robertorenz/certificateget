@@ -78,7 +78,8 @@ public partial class CertificatesView : UserControl
 
         InfoGrid.Children.Clear();
         InfoGrid.RowDefinitions.Clear();
-        AddInfo("Environment", p.EnvironmentDisplay + (p.Environment == AcmeEnvironment.Staging ? "  (test certificate — not trusted by browsers)" : ""));
+        AddInfo("Authority", p.Authority == CertificateAuthority.ZeroSsl ? "ZeroSSL"
+            : "Let's Encrypt " + p.EnvironmentDisplay + (p.Environment == AcmeEnvironment.Staging ? "  (test certificate — not trusted by browsers)" : ""));
         AddInfo("Validation", p.ChallengeDisplay + (p.Challenge == ChallengeMethod.HttpWebRoot ? $"  ·  {p.WebRootPath}" : ""));
         AddInfo("Key type", p.KeyType.ToString().Replace("Rsa", "RSA ").Replace("EcdsaP", "ECDSA P-"));
         if (!string.IsNullOrWhiteSpace(p.Email)) AddInfo("E-mail", p.Email!);

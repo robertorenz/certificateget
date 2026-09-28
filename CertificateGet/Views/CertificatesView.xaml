@@ -12,7 +12,7 @@
         <Grid>
             <StackPanel>
                 <TextBlock Text="Certificates" Style="{StaticResource PageTitle}"/>
-                <TextBlock Text="Everything you have requested from Let's Encrypt, with all file formats kept ready to re-use." Style="{StaticResource PageSubtitle}"/>
+                <TextBlock Text="Everything you have requested from Let's Encrypt or ZeroSSL, with all file formats kept ready to re-use." Style="{StaticResource PageSubtitle}"/>
             </StackPanel>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                 <Button Click="Refresh_Click" Margin="0,0,8,0" ToolTip="Reload from disk">

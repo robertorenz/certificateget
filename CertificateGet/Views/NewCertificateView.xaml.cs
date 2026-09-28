@@ -42,7 +42,7 @@ public partial class NewCertificateView : UserControl, IIssueUi
     {
         _renewing = null;
         PageTitle.Text = "New certificate";
-        PageSubtitle.Text = "Choose the domains, how Let's Encrypt should verify you control them, and the output options.";
+        PageSubtitle.Text = "Choose the domains, how the certificate authority should verify you control them, and the output options.";
         RequestText.Text = "Request certificate";
         TypeStandard.IsChecked = true;
         DomainsBox.Text = "";
@@ -55,6 +55,7 @@ public partial class NewCertificateView : UserControl, IIssueUi
         var s = SettingsService.Current;
         EnvStaging.IsChecked = s.DefaultEnvironment == AcmeEnvironment.Staging;
         EnvProduction.IsChecked = s.DefaultEnvironment == AcmeEnvironment.Production;
+        SelectAuthority(s.DefaultAuthority);
         SelectKeyType(s.DefaultKeyType);
         EmailBox.Text = s.DefaultEmail ?? "";
         PfxPwd.Password = PfxPwd2.Password = "";
@@ -96,6 +97,7 @@ public partial class NewCertificateView : UserControl, IIssueUi
         WebRootBox.Text = p.WebRootPath ?? "";
         EnvStaging.IsChecked = p.Environment == AcmeEnvironment.Staging;
         EnvProduction.IsChecked = p.Environment == AcmeEnvironment.Production;
+        SelectAuthority(p.Authority);
         SelectKeyType(p.KeyType);
         EmailBox.Text = p.Email ?? "";
         var pwd = Secret.Unprotect(p.ProtectedPfxPassword) ?? "";
@@ -104,6 +106,25 @@ public partial class NewCertificateView : UserControl, IIssueUi
             ? "No PFX password was used before. Enter one now if you want the new PFX protected."
             : "The previous PFX password has been filled in. Change it here if you want a different one.";
         UpdateMethodPanels();
+    }
+
+    private void SelectAuthority(CertificateAuthority ca)
+    {
+        (ca == CertificateAuthority.ZeroSsl ? CaZeroSsl : CaLetsEncrypt).IsChecked = true;
+        Ca_Changed(this, null!);
+    }
+
+    private void Ca_Changed(object sender, RoutedEventArgs e)
+    {
+        if (CaHint == null || EnvPanel == null) return; // during InitializeComponent
+        var zero = CaZeroSsl.IsChecked == true;
+        // ZeroSSL has no staging server: every request is a trusted certificate.
+        EnvPanel.Visibility = zero ? Visibility.Collapsed : Visibility.Visible;
+        CaHint.Text = zero
+            ? (SettingsService.Current.ProtectedZeroSslApiKey != null
+                ? "Trusted 90-day certificates, no rate limits. The ACME account is linked to your ZeroSSL account through the API key in Settings."
+                : "Trusted 90-day certificates, no rate limits. The first request links a ZeroSSL account to the contact e-mail below (created if it does not exist); or enter a ZeroSSL API key in Settings.")
+            : "Free, trusted 90-day certificates. The default.";
     }
 
     private void SelectKeyType(CertKeyType type)
@@ -230,7 +251,7 @@ public partial class NewCertificateView : UserControl, IIssueUi
         }
         if (domains.Count > 100)
         {
-            Modal.Warning("Too many names", "Let's Encrypt allows at most 100 names per certificate.");
+            Modal.Warning("Too many names", "A certificate can have at most 100 names.");
             return null;
         }
 
@@ -305,7 +326,9 @@ public partial class NewCertificateView : UserControl, IIssueUi
         p.Challenge = method;
         p.HttpPort = port;
         p.WebRootPath = method == ChallengeMethod.HttpWebRoot ? WebRootBox.Text.Trim() : p.WebRootPath;
-        p.Environment = EnvProduction.IsChecked == true ? AcmeEnvironment.Production : AcmeEnvironment.Staging;
+        p.Authority = CaZeroSsl.IsChecked == true ? CertificateAuthority.ZeroSsl : CertificateAuthority.LetsEncrypt;
+        p.Environment = p.Authority == CertificateAuthority.ZeroSsl || EnvProduction.IsChecked == true
+            ? AcmeEnvironment.Production : AcmeEnvironment.Staging;
         p.KeyType = Enum.Parse<CertKeyType>((string)((ComboBoxItem)KeyTypeBox.SelectedItem).Tag);
         p.Email = email.Length > 0 ? email : null;
         p.ProtectedPfxPassword = Secret.Protect(PfxPwd.Password);
@@ -319,7 +342,16 @@ public partial class NewCertificateView : UserControl, IIssueUi
         var p = BuildProfile();
         if (p == null) return;
 
-        if (p.Environment == AcmeEnvironment.Production && p.History.Count == 0 &&
+        if (p.Authority == CertificateAuthority.ZeroSsl && string.IsNullOrWhiteSpace(p.Email ?? SettingsService.Current.DefaultEmail) &&
+            SettingsService.Current.ProtectedZeroSslApiKey == null &&
+            !File.Exists(Path.Combine(SettingsService.AccountsPath, AcmeService.AccountFileName(p))))
+        {
+            Modal.Warning("E-mail needed for ZeroSSL",
+                "ZeroSSL links every ACME account to a ZeroSSL account. Enter a contact e-mail (the ZeroSSL account is created for it if needed), or add a ZeroSSL API key in Settings.");
+            return;
+        }
+
+        if (p.Authority == CertificateAuthority.LetsEncrypt && p.Environment == AcmeEnvironment.Production && p.History.Count == 0 &&
             !Modal.Confirm("Request a production certificate?",
                 $"This will request a trusted certificate for:\n\n{string.Join("\n", p.Domains)}\n\n" +
                 "Production has strict rate limits (e.g. 5 failed validations per hour per account). If you are unsure your setup works, try Staging first.",
@@ -333,7 +365,7 @@ public partial class NewCertificateView : UserControl, IIssueUi
         SetBusy(true);
         _steps.Clear();
         _lastIssuedProfile = null;
-        SummaryText.Text = $"{p.DomainsDisplay}\n{p.EnvironmentDisplay} · {p.ChallengeDisplay} · {p.KeyType}";
+        SummaryText.Text = $"{p.DomainsDisplay}\n{(p.Authority == CertificateAuthority.ZeroSsl ? "ZeroSSL" : "Let's Encrypt " + p.EnvironmentDisplay)} · {p.ChallengeDisplay} · {p.KeyType}";
         _cts = new CancellationTokenSource();
         try
         {

@@ -55,7 +55,7 @@ public partial class DnsRecordsDialog : Window
         if (!all)
         {
             var go = Modal.Confirm("Records not visible yet",
-                $"Not every {(_records.Any(r => r.Type == "CNAME") ? "CNAME" : "TXT")} record is visible on the public resolvers yet. If Let's Encrypt can't see them the validation will fail " +
+                $"Not every {(_records.Any(r => r.Type == "CNAME") ? "CNAME" : "TXT")} record is visible on the public resolvers yet. If the certificate authority can't see them the validation will fail " +
                 "and you will have to start again.\n\nValidate anyway?", "Validate anyway", "Keep waiting");
             if (!go)
             {

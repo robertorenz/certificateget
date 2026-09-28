@@ -42,7 +42,7 @@
                                 <Button Grid.Column="1" Content="Browse…" Margin="8,0,0,0" Click="BrowseStore_Click"/>
                                 <Button Grid.Column="2" Content="Open" Margin="8,0,0,0" Click="OpenStore_Click"/>
                             </Grid>
-                            <TextBlock Style="{StaticResource Hint}" Text="Holds every certificate, private key, the Let's Encrypt account keys and the activity log. Changing it does not move existing files — copy the folder yourself. Avoid cloud-synced folders: private keys live here."/>
+                            <TextBlock Style="{StaticResource Hint}" Text="Holds every certificate, private key, the ACME account keys and the activity log. Changing it does not move existing files — copy the folder yourself. Avoid cloud-synced folders: private keys live here."/>
                         </StackPanel>
                     </Border>
 
@@ -51,7 +51,12 @@
                             <TextBlock Text="Defaults for new certificates" Style="{StaticResource SectionTitle}"/>
                             <TextBlock Text="Contact e-mail" Style="{StaticResource FieldLabel}" Margin="0,0,0,5"/>
                             <TextBox x:Name="EmailBox" Tag="you@example.com"/>
-                            <TextBlock Text="Environment" Style="{StaticResource FieldLabel}"/>
+                            <TextBlock Text="Certificate authority" Style="{StaticResource FieldLabel}"/>
+                            <StackPanel Orientation="Horizontal">
+                                <RadioButton x:Name="CaLetsEncrypt" Content="Let's Encrypt" GroupName="dca" Margin="0,0,20,0"/>
+                                <RadioButton x:Name="CaZeroSsl" Content="ZeroSSL" GroupName="dca"/>
+                            </StackPanel>
+                            <TextBlock Text="Let's Encrypt environment" Style="{StaticResource FieldLabel}"/>
                             <StackPanel Orientation="Horizontal">
                                 <RadioButton x:Name="EnvStaging" Content="Staging (test)" GroupName="denv" Margin="0,0,20,0"/>
                                 <RadioButton x:Name="EnvProduction" Content="Production" GroupName="denv"/>
@@ -71,9 +76,12 @@
 
                     <Border Style="{StaticResource Card}" Margin="0,16,0,0">
                         <StackPanel>
-                            <TextBlock Text="Let's Encrypt accounts" Style="{StaticResource SectionTitle}"/>
+                            <TextBlock Text="ACME accounts" Style="{StaticResource SectionTitle}"/>
                             <TextBlock x:Name="AccountsText" Style="{StaticResource Hint}" Margin="0"/>
                             <Button Content="Reset accounts…" HorizontalAlignment="Left" Margin="0,12,0,0" Click="ResetAccounts_Click"/>
+                            <TextBlock Text="ZeroSSL API key (optional)" Style="{StaticResource FieldLabel}" Margin="0,16,0,5"/>
+                            <PasswordBox x:Name="ZeroSslKeyBox" Width="320" HorizontalAlignment="Left"/>
+                            <TextBlock Style="{StaticResource Hint}" Text="ZeroSSL only accepts ACME accounts linked to a ZeroSSL account. With an API key (ZeroSSL dashboard → Developer) the account is linked to yours, so its certificates show in your ZeroSSL dashboard. Without one, the contact e-mail is used, and ZeroSSL creates an account for it if needed. Only read when the ZeroSSL ACME account is created. Stored encrypted (DPAPI)."/>
                         </StackPanel>
                     </Border>
                 </StackPanel>

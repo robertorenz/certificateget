@@ -4,6 +4,9 @@ namespace CertificateGet.Models;
 
 public enum AcmeEnvironment { Staging, Production }
 
+/// <summary>The ACME certificate authority a certificate is requested from.</summary>
+public enum CertificateAuthority { LetsEncrypt, ZeroSsl }
+
 public enum ChallengeMethod
 {
     HttpSelfHosted,
@@ -30,6 +33,9 @@ public class CertificateProfile
     public string StorageFolder { get; set; } = "";
     public List<string> Domains { get; set; } = new();
     public AcmeEnvironment Environment { get; set; } = AcmeEnvironment.Staging;
+    /// <summary>Let's Encrypt (the default, also for profiles saved before ZeroSSL was added) or ZeroSSL.
+    /// ZeroSSL has no staging server, so its profiles are always Production.</summary>
+    public CertificateAuthority Authority { get; set; } = CertificateAuthority.LetsEncrypt;
     public ChallengeMethod Challenge { get; set; } = ChallengeMethod.HttpSelfHosted;
     public string? WebRootPath { get; set; }
     public int HttpPort { get; set; } = 80;
@@ -45,7 +51,9 @@ public class CertificateProfile
     [JsonIgnore] public IssuedCertificate? Latest => History.OrderByDescending(h => h.IssuedUtc).FirstOrDefault();
     [JsonIgnore] public bool IsWildcard => Domains.Any(d => d.StartsWith("*."));
     [JsonIgnore] public string DomainsDisplay => string.Join(", ", Domains);
-    [JsonIgnore] public string EnvironmentDisplay => Environment == AcmeEnvironment.Production ? "Production" : "Staging";
+    [JsonIgnore] public string EnvironmentDisplay => Authority == CertificateAuthority.ZeroSsl ? "ZeroSSL"
+        : Environment == AcmeEnvironment.Production ? "Production" : "Staging";
+    [JsonIgnore] public string AuthorityDisplay => Authority == CertificateAuthority.ZeroSsl ? "ZeroSSL" : "Let's Encrypt";
     [JsonIgnore] public string ChallengeDisplay => Challenge switch
     {
         ChallengeMethod.HttpSelfHosted => "HTTP (built-in server)",
@@ -112,6 +120,10 @@ public class AppSettings
         System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData), "CertificateGet", "Store");
     public string? DefaultEmail { get; set; }
     public AcmeEnvironment DefaultEnvironment { get; set; } = AcmeEnvironment.Staging;
+    public CertificateAuthority DefaultAuthority { get; set; } = CertificateAuthority.LetsEncrypt;
+    /// <summary>ZeroSSL API access key, DPAPI-protected. Optional: without it the EAB credentials for the
+    /// ZeroSSL ACME account are requested with the contact e-mail.</summary>
+    public string? ProtectedZeroSslApiKey { get; set; }
     public CertKeyType DefaultKeyType { get; set; } = CertKeyType.Rsa2048;
     /// <summary>Cloudflare API token, DPAPI-protected.</summary>
     public string? ProtectedCloudflareToken { get; set; }

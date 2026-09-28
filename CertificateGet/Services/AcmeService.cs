@@ -40,30 +40,49 @@ public class AcmeService
         _report(level, message);
     }
 
-    public static Uri DirectoryFor(AcmeEnvironment env) =>
-        env == AcmeEnvironment.Production ? WellKnownServers.LetsEncryptV2 : WellKnownServers.LetsEncryptStagingV2;
+    public static Uri DirectoryFor(CertificateProfile p) =>
+        p.Authority == CertificateAuthority.ZeroSsl ? ZeroSsl.Directory
+        : p.Environment == AcmeEnvironment.Production ? WellKnownServers.LetsEncryptV2 : WellKnownServers.LetsEncryptStagingV2;
+
+    /// <summary>"Let's Encrypt Staging", "Let's Encrypt Production" or "ZeroSSL", for messages.</summary>
+    private string Ca => _p.Authority == CertificateAuthority.ZeroSsl ? "ZeroSSL" : "Let's Encrypt " + _p.EnvironmentDisplay;
+
+    /// <summary>One stored ACME account per server: staging.json and production.json (Let's Encrypt), zerossl.json.</summary>
+    public static string AccountFileName(CertificateProfile p) =>
+        p.Authority == CertificateAuthority.ZeroSsl ? "zerossl.json" : $"{p.Environment.ToString().ToLowerInvariant()}.json";
 
     private async Task<IAcmeContext> GetAccountAsync()
     {
         SettingsService.EnsureStore();
-        var file = Path.Combine(SettingsService.AccountsPath, $"{_p.Environment.ToString().ToLowerInvariant()}.json");
+        var file = Path.Combine(SettingsService.AccountsPath, AccountFileName(_p));
         if (File.Exists(file))
         {
             var rec = JsonSerializer.Deserialize<AcmeAccountRecord>(File.ReadAllText(file), Json.Options);
             var pem = Secret.Unprotect(rec?.ProtectedKeyPem);
             if (pem != null)
             {
-                Step($"Using existing Let's Encrypt {_p.EnvironmentDisplay} account.");
-                return new AcmeContext(DirectoryFor(_p.Environment), KeyFactory.FromPem(pem));
+                Step($"Using existing {Ca} account.");
+                return new AcmeContext(DirectoryFor(_p), KeyFactory.FromPem(pem));
             }
             Step("Stored account key could not be decrypted (different Windows user?) — creating a new account.", LogLevel.Warning);
         }
 
-        Step($"Creating a new Let's Encrypt {_p.EnvironmentDisplay} account…");
+        Step($"Creating a new {Ca} account…");
         var key = KeyFactory.NewKey(KeyAlgorithm.ES256);
-        var ctx = new AcmeContext(DirectoryFor(_p.Environment), key);
+        var ctx = new AcmeContext(DirectoryFor(_p), key);
         var email = string.IsNullOrWhiteSpace(_p.Email) ? SettingsService.Current.DefaultEmail : _p.Email;
-        try
+        if (_p.Authority == CertificateAuthority.ZeroSsl)
+        {
+            // ZeroSSL only accepts accounts bound to a ZeroSSL account (External Account Binding).
+            var apiKey = Secret.Unprotect(SettingsService.Current.ProtectedZeroSslApiKey);
+            Step(string.IsNullOrWhiteSpace(apiKey)
+                ? $"Requesting ZeroSSL EAB credentials for {email}…"
+                : "Requesting ZeroSSL EAB credentials with the API key from Settings…");
+            var eab = await ZeroSsl.GetEabAsync(apiKey, email);
+            var contact = string.IsNullOrWhiteSpace(email) ? new List<string>() : new List<string> { "mailto:" + email.Trim() };
+            await ctx.NewAccount(contact, true, eab.KeyId, eab.HmacKey, "HS256");
+        }
+        else try
         {
             var contact = string.IsNullOrWhiteSpace(email) ? new List<string>() : new List<string> { "mailto:" + email.Trim() };
             await ctx.NewAccount(contact, true, null, null, null);
@@ -76,13 +95,13 @@ public class AcmeService
 
         var record = new AcmeAccountRecord
         {
-            Environment = _p.Environment.ToString(),
+            Environment = _p.Authority == CertificateAuthority.ZeroSsl ? "ZeroSSL" : _p.Environment.ToString(),
             Email = email,
             ProtectedKeyPem = Secret.Protect(key.ToPem())!,
             CreatedUtc = DateTime.UtcNow
         };
         File.WriteAllText(file, JsonSerializer.Serialize(record, Json.Options));
-        ActivityLog.Success("Account", $"Created Let's Encrypt {_p.EnvironmentDisplay} account{(string.IsNullOrWhiteSpace(email) ? "" : " for " + email)}.");
+        ActivityLog.Success("Account", $"Created {Ca} account{(string.IsNullOrWhiteSpace(email) ? "" : " for " + email)}.");
         return ctx;
     }
 
@@ -101,7 +120,7 @@ public class AcmeService
         if (_p.IsWildcard && !isDns)
             throw new InvalidOperationException("Wildcard certificates can only be validated with a DNS challenge.");
 
-        Step($"Requesting certificate for {_p.DomainsDisplay} ({_p.EnvironmentDisplay}).");
+        Step($"Requesting certificate for {_p.DomainsDisplay} from {Ca}.");
         var ctx = await GetAccountAsync();
         ct.ThrowIfCancellationRequested();
 
@@ -120,7 +139,7 @@ public class AcmeService
                 continue;
             }
             var ch = isDns ? await authz.Dns() : await authz.Http();
-            if (ch == null) throw new InvalidOperationException($"Let's Encrypt offered no {(isDns ? "DNS" : "HTTP")} challenge for {display}.");
+            if (ch == null) throw new InvalidOperationException($"{_p.AuthorityDisplay} offered no {(isDns ? "DNS" : "HTTP")} challenge for {display}.");
             pending.Add(new PendingChallenge(authz, ch, domain, display));
         }
 
@@ -149,7 +168,7 @@ public class AcmeService
             var csr = CertificateStore.CreateCsr(key, _p.Domains);
             await order.Finalize(csr);
         }
-        Step("CSR submitted. Waiting for Let's Encrypt to issue the certificate…");
+        Step($"CSR submitted. Waiting for {_p.AuthorityDisplay} to issue the certificate…");
         await WaitForOrder(order, OrderStatus.Valid, ct);
 
         var chain = await order.Download(null);
@@ -163,12 +182,14 @@ public class AcmeService
 
     private async Task WaitForOrder(IOrderContext order, OrderStatus wanted, CancellationToken ct)
     {
-        for (var i = 0; i < 60; i++)
+        // ZeroSSL can keep an order "processing" for several minutes before the certificate is ready.
+        var tries = _p.Authority == CertificateAuthority.ZeroSsl ? 300 : 60;
+        for (var i = 0; i < tries; i++)
         {
             var o = await order.Resource();
             if (o.Status == wanted || o.Status == OrderStatus.Valid) return;
             if (o.Status == OrderStatus.Invalid)
-                throw new InvalidOperationException("Let's Encrypt marked the order invalid. Check the activity log for challenge errors.");
+                throw new InvalidOperationException($"{_p.AuthorityDisplay} marked the order invalid. Check the activity log for challenge errors.");
             await Task.Delay(2000, ct);
         }
         throw new TimeoutException($"Timed out waiting for the order to become {wanted}.");
@@ -178,7 +199,7 @@ public class AcmeService
     {
         foreach (var pc in pending)
         {
-            Step($"{pc.Display}: asking Let's Encrypt to validate…");
+            Step($"{pc.Display}: asking {_p.AuthorityDisplay} to validate…");
             await pc.Challenge.Validate();
         }
 
@@ -214,7 +235,7 @@ public class AcmeService
             throw new InvalidOperationException(
                 $"Could not listen on port {_p.HttpPort}: {ex.Message}. If IIS or another web server is using the port, use the \"HTTP (web root)\" method instead.");
         }
-        Step($"Built-in HTTP server listening on port {_p.HttpPort}. Let's Encrypt must reach http://<domain>/.well-known/acme-challenge/ on this machine.");
+        Step($"Built-in HTTP server listening on port {_p.HttpPort}. {_p.AuthorityDisplay} must reach http://<domain>/.well-known/acme-challenge/ on this machine.");
         await ValidateAll(pending, ct);
     }
 

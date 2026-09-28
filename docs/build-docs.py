@@ -167,7 +167,7 @@ SOURCE_DOC = {
  'crt':               ('PEM', 'Certificate only, the same bytes as <code>cer</code>.'),
  'der':               ('binary', 'Certificate only, DER encoded. Java and some Windows tools.'),
  'chain':             ('PEM', 'Intermediates only. Apache <code>SSLCertificateChainFile</code>.'),
- 'fullchain-root':    ('PEM', 'Full chain plus the ISRG root, for devices that validate the whole chain.'),
+ 'fullchain-root':    ('PEM', 'Full chain plus the root, for devices that validate the whole chain.'),
  'encrypted-key':     ('PEM, secret', 'Private key encrypted with the certificate\'s PFX password.'),
  'pfx':               ('PKCS#12, secret', 'Certificate, chain and key, protected with the certificate\'s PFX password. IIS, Exchange, Windows.'),
  'p12':               ('PKCS#12, secret', 'The same as <code>pfx</code> with a <code>.p12</code> extension. Java/Tomcat, macOS.'),
@@ -645,7 +645,7 @@ CertificateGet app issues or renews a certificate, it sends the files to the age
 writes them where each program expects them, restarts what needs restarting, and reports every step back
 to the app's activity log.</p>''')
     add(flow([
-        ('CertificateGet', 'The desktop app on your PC issues or renews the certificate from Let\'s Encrypt.', ''),
+        ('CertificateGet', 'The desktop app on your PC issues or renews the certificate from Let\'s Encrypt or ZeroSSL.', ''),
         ('HTTPS :9443', 'The app asks the agent which files the slot needs, then sends exactly those. It checks the agent\'s pinned TLS fingerprint and sends the API key.', ''),
         ('Agent', 'A Windows service or systemd unit on the server. It reads <code>agent.json</code>, finds the slot and backs up the current files.', 'srv'),
         ('Destinations', 'Files written into each folder with the names each program expects, or imported into TSplus.', 'srv'),

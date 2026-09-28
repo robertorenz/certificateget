@@ -1,6 +1,6 @@
 # CertificateGet
 
-A Windows desktop app (C# / WPF, .NET 9) that gets free TLS certificates from **Let's Encrypt**, keeps every certificate in every common file format, and logs everything you do.
+A Windows desktop app (C# / WPF, .NET 9) that gets free TLS certificates from **Let's Encrypt** or **ZeroSSL**, keeps every certificate in every common file format, and logs everything you do.
 
 ![Platform](https://img.shields.io/badge/platform-Windows-0F172A) ![.NET](https://img.shields.io/badge/.NET-9-2563EB) ![ACME](https://img.shields.io/badge/ACME-Let's%20Encrypt-0D9488)
 
@@ -37,7 +37,7 @@ A Windows desktop app (C# / WPF, .NET 9) that gets free TLS certificates from **
   | `name.p7b` | PKCS#7: certificate + chain, no key (Windows intermediates, Java keytool, Tomcat, F5, Citrix, Palo Alto) |
   | `cert.pem`, `privkey.pem`, `chain.pem`, `fullchain.pem` | Certbot-style names (Linux guides, Synology, Home Assistant, Proxmox, Docker) |
   | `name-encrypted.key` | Private key encrypted with the PFX password (FortiGate, Sophos, Cisco, Apache with passphrase) |
-  | `name-fullchain-root.pem` | Full chain plus the ISRG root (devices that validate the whole chain) |
+  | `name-fullchain-root.pem` | Full chain plus the root (devices that validate the whole chain) |
   | `name-combined-keyfirst.pem` | Private key, then full chain (Postfix, lighttpd, Pound) |
   | `name.p12` | Same as the PFX with a .p12 extension (Java/Tomcat, macOS, Android) |
   | `name.crt` | Certificate only, PEM, .crt extension |
@@ -52,6 +52,7 @@ A Windows desktop app (C# / WPF, .NET 9) that gets free TLS certificates from **
   - **SFTP / SSH**: uploads files atomically and runs a command such as `haproxy -c … && systemctl reload haproxy`. Nothing to install on the server; presets for HAProxy and nginx.
 - **Activity log.** Every request, challenge, validation, export, install and error is recorded with search, level filter and CSV export.
 - **Staging and Production.** Test against Let's Encrypt staging without hitting rate limits, then switch to Production.
+- **Let's Encrypt or ZeroSSL.** Choose the certificate authority per certificate. ZeroSSL issues trusted 90-day certificates with no rate limits; its ACME account is linked to a ZeroSSL account through External Account Binding, which the app requests automatically with your contact e-mail, or with a ZeroSSL API key from Settings so the certificates appear in your ZeroSSL dashboard. ZeroSSL has no staging server.
 - **Secrets protected.** PFX passwords, ACME account keys, DNS API tokens and keys, and acme-dns passwords are encrypted with Windows DPAPI for your user account.
 - **Help built in.** **Help** in the sidebar (or F1) opens the four-volume agent manual in your browser, in English or Spanish, from a copy inside the exe, so it works offline.
 - Popups are modal dialogs, not message boxes. The interface uses a slate, blue and teal theme.
@@ -189,6 +190,7 @@ docs/                           agent manual (four HTML volumes, Spanish in docs
 
 ## Notes
 
+- ZeroSSL can take a few minutes to issue after validation; the app waits up to ten minutes.
 - Let's Encrypt certificates are valid for up to 90 days, and Let's Encrypt is moving to shorter lifetimes. Renew when the app flags a certificate as expiring. Let's Encrypt no longer sends expiry emails.
 - Production rate limits include 5 failed validations per hour per account and hostname, and 50 certificates per registered domain per week. Test with Staging.
 - PFX encryption defaults to 3DES/SHA-1 so it imports on older Windows Server and appliances. Switch to AES-256 in Settings if all your targets support it.

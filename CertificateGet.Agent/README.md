@@ -66,7 +66,7 @@ The slot's own `Commands` run once, after all destinations.
 | `cer`, `crt` | Certificate only (PEM) |
 | `der` | Certificate only (binary DER) |
 | `chain` | Intermediates only |
-| `fullchain-root` | Full chain + ISRG root |
+| `fullchain-root` | Full chain + root |
 | `pfx`, `p12` | PKCS#12, using the certificate's PFX password from the app |
 | `encrypted-key` | Key encrypted with the PFX password |
 | `p7b` | PKCS#7 |
