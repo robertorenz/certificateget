@@ -8,6 +8,8 @@ A small service for your servers (Windows or Linux). The CertificateGet app send
 4. keeps **backups** of the files it replaced, in its own folder, never next to the live files,
 5. reports every step back to the app's activity log.
 
+The full manual (install walkthrough, `agent.json` templates for NetTalk, HAProxy, Cockpit and TSplus, and a reference generated from the sources) is in [`docs/`](../docs) and linked from the [main README](../README.md#agent-manual).
+
 ## Install
 
 **Windows** (PowerShell as administrator). Copy `CertificateGet.Agent.exe` to a folder such as `C:\Program Files\CertificateGet Agent\`, then run:
