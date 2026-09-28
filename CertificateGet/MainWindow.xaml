@@ -48,6 +48,7 @@
                     <RadioButton x:Name="NavLog" Style="{StaticResource NavItem}" Tag="&#xE81C;" Content="Activity log" GroupName="nav" Checked="Nav_Checked"/>
                     <TextBlock Text="SYSTEM" Foreground="{StaticResource SidebarMutedBrush}" FontSize="10.5" FontWeight="SemiBold" Margin="24,18,0,6"/>
                     <RadioButton x:Name="NavSettings" Style="{StaticResource NavItem}" Tag="&#xE713;" Content="Settings" GroupName="nav" Checked="Nav_Checked"/>
+                    <Button Style="{StaticResource NavAction}" Tag="&#xE897;" Content="Help" Click="Help_Click" ToolTip="Agent manual: install, agent.json templates, reference"/>
                 </StackPanel>
             </DockPanel>
         </Border>

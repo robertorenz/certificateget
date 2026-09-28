@@ -1,0 +1,78 @@
+<Window x:Class="CertificateGet.UI.HelpDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent" ResizeMode="NoResize"
+        ShowInTaskbar="False" WindowStartupLocation="CenterOwner" SizeToContent="Height" Width="640"
+        FontFamily="Segoe UI">
+    <Border Margin="24" Background="White" CornerRadius="12" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="28" ShadowDepth="6" Opacity="0.25"/>
+        </Border.Effect>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <StackPanel Orientation="Horizontal" Margin="24,22,24,10">
+                <Border Width="38" Height="38" CornerRadius="19" Background="{StaticResource PrimarySoftBrush}" Margin="0,0,14,0">
+                    <TextBlock Text="&#xE897;" Style="{StaticResource Icon}" FontSize="17" Foreground="{StaticResource PrimaryBrush}" HorizontalAlignment="Center"/>
+                </Border>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="CertificateGet Agent manual" FontSize="17" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
+                    <TextBlock Text="Four volumes. Each opens in your browser, and they link to each other." Style="{StaticResource PageSubtitle}" Margin="0,2,0,0"/>
+                </StackPanel>
+            </StackPanel>
+
+            <ItemsControl x:Name="VolumeList" Grid.Row="1" Margin="24,6,24,14">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Button Click="Volume_Click" Margin="0,0,0,8" Cursor="Hand" HorizontalContentAlignment="Stretch">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="Bd" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8"
+                                            Padding="14,11" Background="White">
+                                        <ContentPresenter/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource PrimarySoftBrush}"/>
+                                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
+                                        </Trigger>
+                                        <Trigger Property="IsKeyboardFocused" Value="True">
+                                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Width="34" Height="34" CornerRadius="7" Background="{StaticResource AccentSoftBrush}" Margin="0,0,14,0" VerticalAlignment="Top">
+                                    <TextBlock Text="{Binding Glyph}" Style="{StaticResource Icon}" FontSize="15" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Center"/>
+                                </Border>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="14" Foreground="{StaticResource TextBrush}"/>
+                                    <TextBlock Text="{Binding Summary}" TextWrapping="Wrap" FontSize="12.5" Foreground="{StaticResource TextMutedBrush}" Margin="0,2,0,0"/>
+                                </StackPanel>
+                                <TextBlock Grid.Column="2" Text="&#xE8A7;" Style="{StaticResource Icon}" FontSize="13" Foreground="{StaticResource PrimaryBrush}" Margin="12,0,0,0"/>
+                            </Grid>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <Border Grid.Row="2" Background="{StaticResource CardAltBrush}" CornerRadius="0,0,12,12" Padding="20,12"
+                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0">
+                <Grid>
+                    <TextBlock Text="Press F1 anywhere to open this list." VerticalAlignment="Center" FontSize="12" Foreground="{StaticResource TextMutedBrush}"/>
+                    <Button Content="Close" Click="Close_Click" Style="{StaticResource SecondaryButton}" HorizontalAlignment="Right" IsCancel="True"/>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

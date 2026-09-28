@@ -1,0 +1,481 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Agent Template Guide</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@400;600&display=swap">
+<style>
+:root{
+  --paper:#fbfcfd; --surface:#f1f5f9; --sunken:#e9eff5; --rule:#d6e0ea;
+  --ink:#0f1720; --soft:#4e5f70; --faint:#728396;
+  --accent:#23629a; --accent-bg:#e4eef6; --accent-rule:#b9d3e6;
+  --teal:#127068; --teal-bg:#e0f1ee;
+  --warn:#8a5a12; --warn-bg:#f7eeda;
+  --t-key:#1f5c91; --t-str:#11695f; --t-num:#8a5a12; --t-com:#7d8ea0;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --paper:#0d131a; --surface:#151d26; --sunken:#111922; --rule:#25313d;
+    --ink:#e2eaf2; --soft:#9aabbc; --faint:#7a8b9d;
+    --accent:#6fadde; --accent-bg:#152738; --accent-rule:#28455f;
+    --teal:#4fb5ab; --teal-bg:#102a29;
+    --warn:#d8a545; --warn-bg:#2b2413;
+    --t-key:#7fb6e3; --t-str:#6cc3b8; --t-num:#d8a545; --t-com:#6f8092;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --paper:#0d131a; --surface:#151d26; --sunken:#111922; --rule:#25313d;
+  --ink:#e2eaf2; --soft:#9aabbc; --faint:#7a8b9d;
+  --accent:#6fadde; --accent-bg:#152738; --accent-rule:#28455f;
+  --teal:#4fb5ab; --teal-bg:#102a29;
+  --warn:#d8a545; --warn-bg:#2b2413;
+  --t-key:#7fb6e3; --t-str:#6cc3b8; --t-num:#d8a545; --t-com:#6f8092;
+}
+*{box-sizing:border-box}
+body{margin:0; background:var(--paper); color:var(--ink);
+  font-family:"IBM Plex Serif",Georgia,serif; font-size:16px; line-height:1.62;
+  -webkit-font-smoothing:antialiased}
+h1,h2,h3,h4,.ui{font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif}
+code,pre,.mono{font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace}
+a{color:var(--accent)}
+a:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:3px}
+.wrap{display:grid; grid-template-columns:280px minmax(0,1fr); align-items:start}
+.side{position:sticky; top:env(safe-area-inset-top,0px); height:100vh; overflow-y:auto; padding:24px 20px 60px;
+  border-right:1px solid var(--rule); background:var(--surface)}
+.brand{font-family:"IBM Plex Sans",sans-serif; font-weight:600; font-size:15px; margin:0 0 14px}
+.brand b{color:var(--accent)}
+.vols{list-style:none; margin:0 0 18px; padding:0 0 16px; display:flex; flex-direction:column; gap:3px;
+  border-bottom:1px solid var(--rule)}
+.vols a{display:block; padding:7px 10px; border-radius:6px; text-decoration:none;
+  font:500 13px/1.35 "IBM Plex Sans",sans-serif; color:var(--soft); border:1px solid transparent}
+.vols a:hover{background:var(--sunken); color:var(--ink)}
+.vols a.here{background:var(--accent-bg); border-color:var(--accent-rule); color:var(--accent)}
+.vols small{display:block; font:400 11px/1.35 "IBM Plex Sans",sans-serif; color:var(--faint); margin-top:2px}
+.vols a.here small{color:var(--accent)}
+.filter{width:100%; margin:0 0 16px; padding:7px 10px; font:13px/1.4 "IBM Plex Sans",sans-serif;
+  color:var(--ink); background:var(--paper); border:1px solid var(--rule); border-radius:6px}
+.filter:focus{outline:2px solid var(--accent); outline-offset:1px}
+.nav__g{font:600 10.5px/1 "IBM Plex Sans",sans-serif; letter-spacing:.11em; text-transform:uppercase;
+  color:var(--faint); margin:18px 0 8px}
+.nav__l{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:1px}
+.nav__l a{display:block; padding:4px 8px; border-radius:5px; text-decoration:none; color:var(--soft);
+  font:400 13.5px/1.45 "IBM Plex Sans",sans-serif}
+.nav__l a:hover{background:var(--sunken); color:var(--ink)}
+.nav__l a.on{background:var(--accent-bg); color:var(--accent); font-weight:500}
+.main{padding:0 0 120px; min-width:0}
+.inner{max-width:980px; padding:0 40px}
+.hero{padding:52px 40px 30px; border-bottom:1px solid var(--rule);
+  background:linear-gradient(180deg,var(--accent-bg),transparent)}
+.hero .inner{padding:0}
+.eyebrow{font:600 11px/1 "IBM Plex Sans",sans-serif; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--accent); margin:0 0 12px}
+h1{font-size:37px; line-height:1.1; margin:0 0 10px; letter-spacing:-.015em; text-wrap:balance}
+.sub{font-size:17px; color:var(--soft); margin:0 0 18px; max-width:62ch}
+.chips{display:flex; flex-wrap:wrap; gap:8px}
+.chip{font:500 11.5px/1 "IBM Plex Sans",sans-serif; padding:6px 10px; border-radius:99px;
+  border:1px solid var(--rule); background:var(--paper); color:var(--soft)}
+.chip b{color:var(--ink); font-weight:600}
+h2{font-size:26px; margin:60px 0 6px; letter-spacing:-.01em; scroll-margin-top:18px; text-wrap:balance}
+h2 .k{font:600 10.5px/1 "IBM Plex Sans",sans-serif; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--accent); display:block; margin-bottom:9px}
+h3{font-size:17.5px; margin:36px 0 10px; scroll-margin-top:18px; text-wrap:balance}
+h4{font-size:14.5px; margin:24px 0 6px; color:var(--soft); font-weight:600}
+p{margin:0 0 14px; max-width:70ch}
+ul.b,ol.b{max-width:70ch; padding-left:20px; margin:0 0 16px}
+ul.b li,ol.b li{margin:0 0 7px}
+ol.steps{list-style:none; counter-reset:s; padding:0; margin:0 0 20px; max-width:74ch;
+  display:flex; flex-direction:column; gap:12px}
+ol.steps>li{counter-increment:s; display:grid; grid-template-columns:30px minmax(0,1fr); gap:12px}
+ol.steps>li::before{content:counter(s); width:26px; height:26px; border-radius:50%;
+  background:var(--accent-bg); border:1px solid var(--accent-rule); color:var(--accent);
+  font:600 12.5px/24px "IBM Plex Sans",sans-serif; text-align:center; font-variant-numeric:tabular-nums}
+ol.steps>li>div{min-width:0}
+ol.steps .code{margin:8px 0 4px}
+.code{background:var(--sunken); border:1px solid var(--rule); border-left:3px solid var(--accent-rule);
+  border-radius:0 7px 7px 0; padding:14px 16px; overflow-x:auto; margin:0 0 18px;
+  font-size:12.9px; line-height:1.62; position:relative}
+.code code{white-space:pre; color:var(--ink)}
+.code::after{content:attr(data-lang); position:absolute; top:0; right:0; padding:3px 9px;
+  font:500 9.5px/1 "IBM Plex Sans",sans-serif; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--faint); background:var(--surface); border-left:1px solid var(--rule);
+  border-bottom:1px solid var(--rule); border-radius:0 0 0 6px}
+.code--use{margin:7px 0 2px; border-left-color:var(--teal); background:var(--paper);
+  font-size:12.4px; padding:9px 12px}
+.code--use::after{content:'agent.json'; color:var(--teal)}
+.code--sh::after{content:'shell'} .code--resp::after{content:'response'}
+.t-k{color:var(--t-key)} .t-s{color:var(--t-str)} .t-n{color:var(--t-num)} .t-c{color:var(--t-com); font-style:italic}
+p code,li code,td code{background:var(--sunken); border:1px solid var(--rule); border-radius:4px;
+  padding:.06em .34em; font-size:.86em}
+.tw{overflow-x:auto; margin:0 0 20px; border:1px solid var(--rule); border-radius:8px; background:var(--paper)}
+table{border-collapse:collapse; width:100%; font-size:13.5px; font-family:"IBM Plex Sans",sans-serif}
+th{text-align:left; font-weight:600; font-size:11px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--faint); padding:9px 14px; border-bottom:1px solid var(--rule); background:var(--surface)}
+td{padding:10px 14px; border-bottom:1px solid var(--rule); vertical-align:top}
+tr:last-child td{border-bottom:0}
+.fns .fn__n{width:200px; white-space:nowrap}
+.fns .fn__n code{font-size:12.8px; color:var(--accent); font-weight:500; background:none; border:0; padding:0}
+.fns .fn__s code{font-size:12.2px; color:var(--soft); background:none; border:0; padding:0; white-space:pre-wrap}
+.fn__d{margin:5px 0 0; font-family:"IBM Plex Serif",serif; font-size:13.8px; color:var(--ink); max-width:74ch}
+.fn__d code{font-size:.84em}
+.dflt{margin-left:8px; font:500 10.5px/1 "IBM Plex Mono",monospace; color:var(--faint);
+  border:1px solid var(--rule); border-radius:4px; padding:2px 5px; vertical-align:1px}
+.tag{display:inline-block; font:600 10px/1 "IBM Plex Sans",sans-serif; letter-spacing:.06em; text-transform:uppercase;
+  padding:3px 6px; border-radius:4px; background:var(--teal-bg); color:var(--teal); margin-left:6px; vertical-align:1px}
+.tag--warn{background:var(--warn-bg); color:var(--warn)}
+.note{border:1px solid var(--rule); border-left:3px solid var(--accent); background:var(--surface);
+  border-radius:0 7px 7px 0; padding:13px 16px; margin:0 0 18px; max-width:74ch}
+.note--warn{border-left-color:var(--warn); background:var(--warn-bg)}
+.note--ok{border-left-color:var(--teal); background:var(--teal-bg)}
+.note__t{font:600 12px/1.3 "IBM Plex Sans",sans-serif; letter-spacing:.03em; margin:0 0 5px;
+  text-transform:uppercase; color:var(--soft)}
+.note--warn .note__t{color:var(--warn)} .note--ok .note__t{color:var(--teal)}
+.note__b p{margin:0 0 8px; font-size:14.5px} .note__b p:last-child{margin:0}
+.stack{display:flex; flex-direction:column; gap:9px; margin:0 0 22px; max-width:680px}
+.layer{border:1px solid var(--rule); border-radius:8px; padding:12px 15px; background:var(--surface);
+  display:grid; grid-template-columns:130px minmax(0,1fr); gap:14px; align-items:baseline}
+.layer b{font:600 11px/1.4 "IBM Plex Sans",sans-serif; letter-spacing:.06em; text-transform:uppercase; color:var(--accent)}
+.layer.srv b{color:var(--teal)}
+.layer p{margin:0; font-size:14px; color:var(--soft); max-width:none}
+.arrow{text-align:center; color:var(--faint); font-size:12px; margin:-4px 0}
+.next{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; margin:26px 0 0}
+.next a{display:block; padding:14px 16px; border:1px solid var(--rule); border-radius:9px;
+  background:var(--surface); text-decoration:none}
+.next a:hover{border-color:var(--accent-rule); background:var(--accent-bg)}
+.next b{display:block; font:600 14px/1.3 "IBM Plex Sans",sans-serif; color:var(--accent); margin-bottom:3px}
+.next span{font:400 13px/1.45 "IBM Plex Serif",serif; color:var(--soft)}
+.hide{display:none !important}
+footer{margin-top:70px; padding:22px 0 0; border-top:1px solid var(--rule); color:var(--faint);
+  font:400 13px/1.6 "IBM Plex Sans",sans-serif}
+@media (max-width:900px){
+  .wrap{grid-template-columns:1fr}
+  .side{position:static; height:auto; border-right:0; border-bottom:1px solid var(--rule)}
+  .inner,.hero{padding-left:18px; padding-right:18px}
+  .layer{grid-template-columns:1fr; gap:4px}
+  .fns .fn__n{white-space:normal; width:auto}
+  h1{font-size:30px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none !important; transition:none !important}}
+</style>
+<div class="wrap">
+<nav class="side">
+  <p class="brand"><b>CertificateGet</b> Agent</p>
+<ul class="vols"><li><a href="getting-started.html">1. Getting Started<small>Install the agent and connect the app</small></a></li><li><a href="programmers-guide.html">2. Programmer's Guide<small>How deployments run, security, platform notes</small></a></li><li><a href="#" class="here">3. Template Guide<small>agent.json for NetTalk, HAProxy, Cockpit, TSplus</small></a></li><li><a href="reference.html">4. Reference<small>Every field, source, command and endpoint</small></a></li></ul><p class="nav__g">agent.json</p><ul class="nav__l"><li><a href="#anatomy">The shape of the file</a></li></ul><p class="nav__g">NetTalk</p><ul class="nav__l"><li><a href="#nettalk">NetTalk</a></li><li><a href="#nettalk-one">One NetTalk service</a></li><li><a href="#nettalk-many">Several NetTalk instances, one certificate</a></li><li><a href="#nettalk-desktop">NetTalk running as a desktop program</a></li></ul><p class="nav__g">HAProxy</p><ul class="nav__l"><li><a href="#haproxy">HAProxy</a></li><li><a href="#haproxy-one">One certificate</a></li><li><a href="#haproxy-many">Several certificates in the same folder</a></li></ul><p class="nav__g">Cockpit</p><ul class="nav__l"><li><a href="#cockpit">Cockpit</a></li><li><a href="#cockpit-replace">Replace the certificate Cockpit already uses</a></li><li><a href="#cockpit-new">Add a certificate next to the self-signed one</a></li><li><a href="#cockpit-cmd">What the command does</a></li></ul><p class="nav__g">TSplus</p><ul class="nav__l"><li><a href="#tsplus">TSplus</a></li><li><a href="#tsplus-15">TSplus 15 and later</a></li><li><a href="#tsplus-jks">Older TSplus with cert.jks</a></li><li><a href="#tsplus-paths">TSplus installed somewhere else</a></li></ul><p class="nav__g">Complete files</p><ul class="nav__l"><li><a href="#together">Several programs on one server</a></li><li><a href="#together-win">Windows: NetTalk and TSplus</a></li><li><a href="#together-linux">Linux: HAProxy and Cockpit</a></li></ul><ul class="nav__l"><li><a href="#next3">Where to go next</a></li></ul>
+</nav>
+<main class="main">
+  <header class="hero"><div class="inner">
+    <p class="eyebrow">Volume 3</p>
+    <h1>Template Guide</h1>
+    <p class="sub">Ready-made <code>agent.json</code> slots for NetTalk, HAProxy, Cockpit and TSplus, with the reasoning behind each file name and command.</p>
+    <div class="chips"><span class="chip"><b>NetTalk</b> service &amp; desktop</span><span class="chip"><b>HAProxy</b> combined PEM</span><span class="chip"><b>Cockpit</b> ws-certs.d</span><span class="chip"><b>TSplus</b> 15+ &amp; jks</span></div>
+  </div></header>
+  <div class="inner"><h2 id="anatomy"><span class="k">agent.json</span>The shape of the file</h2><p><code>agent.json</code> sits next to the executable. The top of the file is written by
+<code>install</code> and rarely changes; your work is in <code>Slots</code>. Each template below is one slot (or one
+destination) to paste into that list.</p><pre class="code" data-lang="json"><code>{
+  <span class="t-k">"Port"</span>: <span class="t-n">9443</span>,                         <span class="t-c">// HTTPS port; restart the service after changing it</span>
+  <span class="t-k">"ApiKeyHash"</span>: <span class="t-s">"…"</span>,                    <span class="t-c">// written by install / newkey — do not edit</span>
+  <span class="t-k">"AllowedIps"</span>: [ <span class="t-s">"192.168.1.50"</span> ],     <span class="t-c">// the PC running CertificateGet; [] = any</span>
+  <span class="t-k">"TlsPfx"</span>: <span class="t-s">"agent-tls.pfx"</span>,            <span class="t-c">// the agent's own TLS certificate</span>
+  <span class="t-k">"TlsPassword"</span>: <span class="t-s">"…"</span>,                   <span class="t-c">// written by the agent — do not edit</span>
+  <span class="t-k">"KeepBackups"</span>: <span class="t-n">5</span>,                     <span class="t-c">// dated backup folders kept per destination</span>
+  <span class="t-k">"Slots"</span>: [
+    {
+      <span class="t-k">"Name"</span>: <span class="t-s">"example-com"</span>,            <span class="t-c">// what the app's deployment target names</span>
+      <span class="t-k">"Description"</span>: <span class="t-s">"…"</span>,               <span class="t-c">// shown in the app</span>
+      <span class="t-k">"Destinations"</span>: [
+        {
+          <span class="t-k">"Name"</span>: <span class="t-s">"…"</span>,                  <span class="t-c">// shown in the log; also the backup folder name</span>
+          <span class="t-k">"Kind"</span>: <span class="t-s">"Files"</span>,              <span class="t-c">// Files (default), TSplus or TSplusJks</span>
+          <span class="t-k">"Folder"</span>: <span class="t-s">"…"</span>,                <span class="t-c">// created when missing</span>
+          <span class="t-k">"Files"</span>: [ { <span class="t-k">"Source"</span>: <span class="t-s">"fullchain"</span>, <span class="t-k">"FileName"</span>: <span class="t-s">"…"</span> } ],
+          <span class="t-k">"RestartServices"</span>: [],        <span class="t-c">// Windows service names / systemd units</span>
+          <span class="t-k">"RestartPrograms"</span>: [],        <span class="t-c">// Windows desktop programs</span>
+          <span class="t-k">"Commands"</span>: []                <span class="t-c">// cmd.exe on Windows, /bin/sh on Linux; {folder} = Folder</span>
+        }
+      ],
+      <span class="t-k">"Commands"</span>: []                    <span class="t-c">// run once, after all destinations</span>
+    }
+  ]
+}</code></pre><aside class="note note--warn"><p class="note__t">Comments are for reading only</p><div class="note__b"><p>JSON has no comments. The <code>//</code> notes above explain the fields; the real file must not contain them. The templates below are plain JSON and can be pasted as they are.</p></div></aside><p>After every change run <code>check</code>. Every field is described in the <a href="reference.html#root">Reference</a>.</p><h2 id="nettalk"><span class="k">Windows</span>NetTalk</h2><p>A NetTalk web server reads a certificate file and a private key file, named in the WebServer
+procedure's SSL settings. Each instance commonly uses its own <code>certificates</code> folder with
+<code>&lt;domain&gt;.crt</code> and <code>&lt;domain&gt;.key</code>. Write <code>fullchain</code> as the certificate
+so browsers get the intermediate, write <code>key</code> as the key, and restart the instance, because NetTalk
+loads the files at start-up.</p><div class="tw"><table class=""><thead><tr><th>NetTalk setting</th><th>Source</th><th>Example file</th></tr></thead><tbody><tr><td>Certificate file</td><td><code>fullchain</code></td><td><code>certificates\www.example.com.crt</code></td></tr><tr><td>Private key file</td><td><code>key</code></td><td><code>certificates\www.example.com.key</code></td></tr><tr><td>Restart</td><td><code>RestartServices</code> or <code>RestartPrograms</code></td><td>Service name, or the path of the <code>.exe</code></td></tr></tbody></table></div><h3 id="nettalk-one">One NetTalk service</h3><p>The service name is the <i>Name</i> column of <code>Get-Service</code>, not the display name.</p><pre class="code" data-lang="json"><code>{
+  <span class="t-k">"Name"</span>: <span class="t-s">"www-example-com"</span>,
+  <span class="t-k">"Description"</span>: <span class="t-s">"www.example.com for the NetTalk web server"</span>,
+  <span class="t-k">"Destinations"</span>: [
+    {
+      <span class="t-k">"Name"</span>: <span class="t-s">"NetTalk web"</span>,
+      <span class="t-k">"Folder"</span>: <span class="t-s">"C:\\Apps\\Web\\certificates"</span>,
+      <span class="t-k">"Files"</span>: [
+        { <span class="t-k">"Source"</span>: <span class="t-s">"fullchain"</span>, <span class="t-k">"FileName"</span>: <span class="t-s">"www.example.com.crt"</span> },
+        { <span class="t-k">"Source"</span>: <span class="t-s">"key"</span>,       <span class="t-k">"FileName"</span>: <span class="t-s">"www.example.com.key"</span> }
+      ],
+      <span class="t-k">"RestartServices"</span>: [ <span class="t-s">"WebServer"</span> ]
+    }
+  ]
+}</code></pre><h3 id="nettalk-many">Several NetTalk instances, one certificate</h3><p>A wildcard certificate used by several NetTalk servers is one slot with one destination per instance, each
+with the file names that instance is configured with. The certificate is sent once and written three times.</p><pre class="code" data-lang="json"><code>{
+  <span class="t-k">"Name"</span>: <span class="t-s">"reddin-wildcard"</span>,
+  <span class="t-k">"Description"</span>: <span class="t-s">"*.reddinassessments.com for three NetTalk servers"</span>,
+  <span class="t-k">"Destinations"</span>: [
+    {
+      <span class="t-k">"Name"</span>: <span class="t-s">"NetTalk - Assessments"</span>,
+      <span class="t-k">"Folder"</span>: <span class="t-s">"C:\\Apps\\Assessments\\certificates"</span>,
+      <span class="t-k">"Files"</span>: [
+        { <span class="t-k">"Source"</span>: <span class="t-s">"fullchain"</span>, <span class="t-k">"FileName"</span>: <span class="t-s">"reddinassessments.com.crt"</span> },
+        { <span class="t-k">"Source"</span>: <span class="t-s">"key"</span>,       <span class="t-k">"FileName"</span>: <span class="t-s">"reddinassessments.com.key"</span> }
+      ],
+      <span class="t-k">"RestartServices"</span>: [ <span class="t-s">"AssessmentsWeb"</span> ]
+    },
+    {
+      <span class="t-k">"Name"</span>: <span class="t-s">"NetTalk - Portal"</span>,
+      <span class="t-k">"Folder"</span>: <span class="t-s">"D:\\Portal\\certs"</span>,
+      <span class="t-k">"Files"</span>: [
+        { <span class="t-k">"Source"</span>: <span class="t-s">"fullchain"</span>, <span class="t-k">"FileName"</span>: <span class="t-s">"portal.crt"</span> },
+        { <span class="t-k">"Source"</span>: <span class="t-s">"key"</span>,       <span class="t-k">"FileName"</span>: <span class="t-s">"portal.key"</span> }
+      ],
+      <span class="t-k">"RestartServices"</span>: [ <span class="t-s">"PortalWeb"</span> ]
+    },
+    {
+      <span class="t-k">"Name"</span>: <span class="t-s">"NetTalk - Reports"</span>,
+      <span class="t-k">"Folder"</span>: <span class="t-s">"D:\\Reports\\certificates"</span>,
+      <span class="t-k">"Files"</span>: [
+        { <span class="t-k">"Source"</span>: <span class="t-s">"fullchain"</span>, <span class="t-k">"FileName"</span>: <span class="t-s">"reports.reddinassessments.com.crt"</span> },
+        { <span class="t-k">"Source"</span>: <span class="t-s">"key"</span>,       <span class="t-k">"FileName"</span>: <span class="t-s">"reports.reddinassessments.com.key"</span> }
+      ],
+      <span class="t-k">"RestartServices"</span>: [ <span class="t-s">"ReportsWeb"</span> ]
+    }
+  ]
+}</code></pre><h3 id="nettalk-desktop">NetTalk running as a desktop program</h3><p>When the server is started from a logged-on desktop instead of as a service, restart it with
+<code>RestartPrograms</code>. Every running copy is closed and started again with its own command line, on the same
+desktop.</p><pre class="code" data-lang="json"><code>{
+  <span class="t-k">"Name"</span>: <span class="t-s">"api-example-com"</span>,
+  <span class="t-k">"Description"</span>: <span class="t-s">"api.example.com, NetTalk server started on the desktop"</span>,
+  <span class="t-k">"Destinations"</span>: [
+    {
+      <span class="t-k">"Name"</span>: <span class="t-s">"NetTalk - API (desktop program)"</span>,
+      <span class="t-k">"Folder"</span>: <span class="t-s">"C:\\Apps\\Api\\certificates"</span>,
+      <span class="t-k">"Files"</span>: [
+        { <span class="t-k">"Source"</span>: <span class="t-s">"fullchain"</span>, <span class="t-k">"FileName"</span>: <span class="t-s">"api.crt"</span> },
+        { <span class="t-k">"Source"</span>: <span class="t-s">"key"</span>,       <span class="t-k">"FileName"</span>: <span class="t-s">"api.key"</span> }
+      ],
+      <span class="t-k">"RestartPrograms"</span>: [
+        { <span class="t-k">"Path"</span>: <span class="t-s">"C:\\Apps\\Api\\ApiServer.exe"</span>, <span class="t-k">"StopTimeoutSeconds"</span>: <span class="t-n">30</span> }
+      ]
+    }
+  ]
+}</code></pre><p>If the program must stay hidden and no one is logged on, add <code>"StartIn": "Background"</code>. Details are in <a href="programmers-guide.html#programs">RestartPrograms</a>.</p><h2 id="haproxy"><span class="k">Linux</span>HAProxy</h2><p>HAProxy wants the certificate, the chain and the key in one PEM file, which is the <code>combined</code>
+source. Point the <code>bind</code> line at the folder, and HAProxy loads every file in it and picks one by SNI.</p><pre class="code" data-lang="haproxy"><code>frontend https-in
+    bind :443 ssl crt /etc/haproxy/certs/ alpn h2,http/1.1
+    bind :80
+    http-request redirect scheme https unless { ssl_fc }
+    default_backend web</code></pre><h3 id="haproxy-one">One certificate</h3><pre class="code" data-lang="json"><code>{
+  <span class="t-k">"Name"</span>: <span class="t-s">"example-com"</span>,
+  <span class="t-k">"Description"</span>: <span class="t-s">"HAProxy on lb01"</span>,
+  <span class="t-k">"Destinations"</span>: [
+    {
+      <span class="t-k">"Name"</span>: <span class="t-s">"HAProxy"</span>,
+      <span class="t-k">"Folder"</span>: <span class="t-s">"/etc/haproxy/certs"</span>,
+      <span class="t-k">"Files"</span>: [
+        { <span class="t-k">"Source"</span>: <span class="t-s">"combined"</span>, <span class="t-k">"FileName"</span>: <span class="t-s">"example.com.pem"</span> }
+      ],
+      <span class="t-k">"Commands"</span>: [ <span class="t-s">"haproxy -c -f /etc/haproxy/haproxy.cfg &amp;&amp; systemctl reload haproxy"</span> ]
+    }
+  ]
+}</code></pre><p>The command checks the whole configuration with the new file before reloading. If the check fails, the
+reload does not run, HAProxy keeps serving with the certificate it already has, and the app shows the error.
+<code>reload</code> keeps open connections; avoid <code>RestartServices: ["haproxy"]</code>.</p><h3 id="haproxy-many">Several certificates in the same folder</h3><p>Each certificate is its own slot with its own file name. Each certificate in the app gets a target pointing at its slot.</p><pre class="code" data-lang="json"><code><span class="t-k">"Slots"</span>: [
+  {
+    <span class="t-k">"Name"</span>: <span class="t-s">"example-com"</span>,
+    <span class="t-k">"Destinations"</span>: [
+      { <span class="t-k">"Name"</span>: <span class="t-s">"HAProxy"</span>, <span class="t-k">"Folder"</span>: <span class="t-s">"/etc/haproxy/certs"</span>,
+        <span class="t-k">"Files"</span>: [ { <span class="t-k">"Source"</span>: <span class="t-s">"combined"</span>, <span class="t-k">"FileName"</span>: <span class="t-s">"example.com.pem"</span> } ],
+        <span class="t-k">"Commands"</span>: [ <span class="t-s">"haproxy -c -f /etc/haproxy/haproxy.cfg &amp;&amp; systemctl reload haproxy"</span> ] }
+    ]
+  },
+  {
+    <span class="t-k">"Name"</span>: <span class="t-s">"example-org"</span>,
+    <span class="t-k">"Destinations"</span>: [
+      { <span class="t-k">"Name"</span>: <span class="t-s">"HAProxy"</span>, <span class="t-k">"Folder"</span>: <span class="t-s">"/etc/haproxy/certs"</span>,
+        <span class="t-k">"Files"</span>: [ { <span class="t-k">"Source"</span>: <span class="t-s">"combined"</span>, <span class="t-k">"FileName"</span>: <span class="t-s">"example.org.pem"</span> } ],
+        <span class="t-k">"Commands"</span>: [ <span class="t-s">"haproxy -c -f /etc/haproxy/haproxy.cfg &amp;&amp; systemctl reload haproxy"</span> ] }
+    ]
+  }
+]</code></pre><h2 id="cockpit"><span class="k">Linux</span>Cockpit</h2><p>Cockpit takes its certificate from <code>/etc/cockpit/ws-certs.d</code>. It uses the <b>last</b>
+<code>.cert</code> or <code>.crt</code> file in alphabetical order; a <code>.cert</code> file holds the chain and key
+together, and a <code>.crt</code> file needs a <code>.key</code> file of the same name. The key must be readable by
+the <code>cockpit-ws</code> group.</p><h3 id="cockpit-replace">Replace the certificate Cockpit already uses</h3><p>If a certificate is already there, for example <code>reddinassessments.cert</code>, overwrite it with
+<code>combined</code>. The agent keeps its owner, group, mode and SELinux label, and the command sets them again
+for a first deployment.</p><pre class="code" data-lang="json"><code>{
+  <span class="t-k">"Name"</span>: <span class="t-s">"Cockpit"</span>,
+  <span class="t-k">"Folder"</span>: <span class="t-s">"/etc/cockpit/ws-certs.d"</span>,
+  <span class="t-k">"Files"</span>: [
+    { <span class="t-k">"Source"</span>: <span class="t-s">"combined"</span>, <span class="t-k">"FileName"</span>: <span class="t-s">"reddinassessments.cert"</span> }
+  ],
+  <span class="t-k">"Commands"</span>: [ <span class="t-s">"chgrp cockpit-ws {folder}/reddinassessments.cert &amp;&amp; chmod 640 {folder}/reddinassessments.cert &amp;&amp; restorecon -F {folder}/reddinassessments.cert ; systemctl reset-failed cockpit.socket cockpit ; systemctl restart cockpit.socket ; systemctl try-restart cockpit"</span> ]
+}</code></pre><h3 id="cockpit-new">Add a certificate next to the self-signed one</h3><p>Otherwise write <code>fullchain</code> and <code>key</code> as <code>90-letsencrypt.crt</code> and
+<code>90-letsencrypt.key</code>. They sort after Cockpit's <code>0-self-signed.cert</code>, so Cockpit picks them.</p><pre class="code" data-lang="json"><code>{
+  <span class="t-k">"Name"</span>: <span class="t-s">"Cockpit"</span>,
+  <span class="t-k">"Folder"</span>: <span class="t-s">"/etc/cockpit/ws-certs.d"</span>,
+  <span class="t-k">"Files"</span>: [
+    { <span class="t-k">"Source"</span>: <span class="t-s">"fullchain"</span>, <span class="t-k">"FileName"</span>: <span class="t-s">"90-letsencrypt.crt"</span> },
+    { <span class="t-k">"Source"</span>: <span class="t-s">"key"</span>,       <span class="t-k">"FileName"</span>: <span class="t-s">"90-letsencrypt.key"</span> }
+  ],
+  <span class="t-k">"Commands"</span>: [ <span class="t-s">"chgrp cockpit-ws {folder}/90-letsencrypt.key &amp;&amp; chmod 640 {folder}/90-letsencrypt.key &amp;&amp; restorecon -F {folder}/90-letsencrypt.* ; systemctl reset-failed cockpit.socket cockpit ; systemctl restart cockpit.socket ; systemctl try-restart cockpit"</span> ]
+}</code></pre><h3 id="cockpit-cmd">What the command does</h3><div class="tw"><table class=""><thead><tr><th>Part</th><th>Why</th></tr></thead><tbody><tr><td><code>chgrp cockpit-ws … &amp;&amp; chmod 640 …</code></td><td>The key must be readable by <code>cockpit-tls</code>, which runs as <code>cockpit-ws</code>.</td></tr><tr><td><code>restorecon -F …</code></td><td>Resets the SELinux label. Not installed on Debian/Ubuntu; the <code>;</code> after it lets the rest run anyway.</td></tr><tr><td><code>systemctl reset-failed cockpit.socket cockpit</code></td><td>Clears systemd's start limit after earlier failures, so the restart is not refused.</td></tr><tr><td><code>systemctl restart cockpit.socket</code></td><td>Cockpit is socket-activated; restarting the socket makes the next connection load the new certificate.</td></tr><tr><td><code>systemctl try-restart cockpit</code></td><td>Restarts the running service only if it is running, and ends with exit code 0 so the step succeeds.</td></tr></tbody></table></div><p>To see which certificate Cockpit will use:</p><pre class="code" data-lang="bash"><code>sudo /usr/lib/cockpit/cockpit-certificate-ensure --check<span class="t-c">      # Debian / Ubuntu</span>
+sudo /usr/libexec/cockpit-certificate-ensure --check<span class="t-c">         # RHEL / Rocky / Alma / Fedora</span></code></pre><h2 id="tsplus"><span class="k">Windows</span>TSplus</h2><p>TSplus has two ways of taking a certificate, depending on the version. Both are a destination with a
+<code>Kind</code> and no files; the agent knows the paths.</p><div class="tw"><table class=""><thead><tr><th>Kind</th><th>TSplus version</th><th>What the agent does</th></tr></thead><tbody><tr><td><code>TSplus</code></td><td>15 and later</td><td>Writes a temporary PFX and <code>certpassword.txt</code>, runs <code>C:\Program Files (x86)\TSplus\UserDesktop\files\cert\CertificateManager.exe /add &lt;pfx&gt;</code>, deletes both.</td></tr><tr><td><code>TSplusJks</code></td><td>Versions that use <code>cert.jks</code></td><td>Backs up and replaces <code>C:\Program Files (x86)\TSplus\Clients\webserver\cert.jks</code> (password <code>secret</code>, full chain), then runs <code>UserDesktop\files\AdminTool.exe /webrestart</code>.</td></tr></tbody></table></div><h3 id="tsplus-15">TSplus 15 and later</h3><pre class="code" data-lang="json"><code>{
+  <span class="t-k">"Name"</span>: <span class="t-s">"tsplus-example-com"</span>,
+  <span class="t-k">"Description"</span>: <span class="t-s">"remote.example.com for the TSplus web portal"</span>,
+  <span class="t-k">"Destinations"</span>: [
+    { <span class="t-k">"Name"</span>: <span class="t-s">"TSplus web portal"</span>, <span class="t-k">"Kind"</span>: <span class="t-s">"TSplus"</span> }
+  ]
+}</code></pre><h3 id="tsplus-jks">Older TSplus with cert.jks</h3><pre class="code" data-lang="json"><code>{
+  <span class="t-k">"Name"</span>: <span class="t-s">"tsplus-example-com"</span>,
+  <span class="t-k">"Description"</span>: <span class="t-s">"remote.example.com for an older TSplus (cert.jks)"</span>,
+  <span class="t-k">"Destinations"</span>: [
+    { <span class="t-k">"Name"</span>: <span class="t-s">"TSplus web portal"</span>, <span class="t-k">"Kind"</span>: <span class="t-s">"TSplusJks"</span> }
+  ]
+}</code></pre><p>The JKS password comes from the app's <b>Settings</b> (<i>JKS keystore password</i>). Leave it at <code>secret</code>; TSplus expects that value.</p><h3 id="tsplus-paths">TSplus installed somewhere else</h3><pre class="code" data-lang="json"><code>{ <span class="t-k">"Name"</span>: <span class="t-s">"TSplus (15+) on D:"</span>,   <span class="t-k">"Kind"</span>: <span class="t-s">"TSplus"</span>,    <span class="t-k">"TsplusCertFolder"</span>: <span class="t-s">"D:\\TSplus\\UserDesktop\\files\\cert"</span> }
+{ <span class="t-k">"Name"</span>: <span class="t-s">"TSplus (jks) on D:"</span>,   <span class="t-k">"Kind"</span>: <span class="t-s">"TSplusJks"</span>, <span class="t-k">"TsplusFolder"</span>: <span class="t-s">"D:\\TSplus"</span> }</code></pre><p><code>check</code> confirms that <code>CertificateManager.exe</code> or the <code>Clients\webserver</code> folder is where the destination says.</p><h2 id="together"><span class="k">Complete files</span>Several programs on one server</h2><p>These are the example files shipped with the agent (<code>agent.example.json</code> in each build folder),
+printed here from the repository. The first puts one wildcard certificate into three NetTalk instances, one of them a
+desktop program, and into TSplus. The second serves HAProxy and Cockpit on one Linux machine.</p><h3 id="together-win">Windows: NetTalk and TSplus</h3><pre class="code" data-lang="json"><code>{
+  <span class="t-k">"Port"</span>: <span class="t-n">9443</span>,
+  <span class="t-k">"ApiKeyHash"</span>: <span class="t-s">"(created by: CertificateGet.Agent.exe install)"</span>,
+  <span class="t-k">"AllowedIps"</span>: [ <span class="t-s">"192.168.1.50"</span> ],
+  <span class="t-k">"TlsPfx"</span>: <span class="t-s">"agent-tls.pfx"</span>,
+  <span class="t-k">"TlsPassword"</span>: <span class="t-s">"(created automatically)"</span>,
+  <span class="t-k">"KeepBackups"</span>: <span class="t-n">5</span>,
+  <span class="t-k">"Slots"</span>: [
+    {
+      <span class="t-k">"Name"</span>: <span class="t-s">"reddin-wildcard"</span>,
+      <span class="t-k">"Description"</span>: <span class="t-s">"*.reddinassessments.com for every NetTalk instance and TSplus on this server"</span>,
+      <span class="t-k">"Destinations"</span>: [
+        {
+          <span class="t-k">"Name"</span>: <span class="t-s">"NetTalk - Assessments"</span>,
+          <span class="t-k">"Folder"</span>: <span class="t-s">"C:\\Apps\\Assessments\\certificates"</span>,
+          <span class="t-k">"Files"</span>: [
+            { <span class="t-k">"Source"</span>: <span class="t-s">"fullchain"</span>, <span class="t-k">"FileName"</span>: <span class="t-s">"reddinassessments.com.crt"</span> },
+            { <span class="t-k">"Source"</span>: <span class="t-s">"key"</span>, <span class="t-k">"FileName"</span>: <span class="t-s">"reddinassessments.com.key"</span> }
+          ],
+          <span class="t-k">"RestartServices"</span>: [ <span class="t-s">"AssessmentsWeb"</span> ]
+        },
+        {
+          <span class="t-k">"Name"</span>: <span class="t-s">"NetTalk - Portal"</span>,
+          <span class="t-k">"Folder"</span>: <span class="t-s">"D:\\Portal\\certs"</span>,
+          <span class="t-k">"Files"</span>: [
+            { <span class="t-k">"Source"</span>: <span class="t-s">"fullchain"</span>, <span class="t-k">"FileName"</span>: <span class="t-s">"portal.crt"</span> },
+            { <span class="t-k">"Source"</span>: <span class="t-s">"key"</span>, <span class="t-k">"FileName"</span>: <span class="t-s">"portal.key"</span> }
+          ],
+          <span class="t-k">"RestartServices"</span>: [ <span class="t-s">"PortalWeb"</span> ]
+        },
+        {
+          <span class="t-k">"Name"</span>: <span class="t-s">"NetTalk - API (desktop app, not a service)"</span>,
+          <span class="t-k">"Folder"</span>: <span class="t-s">"C:\\Apps\\Api\\certificates"</span>,
+          <span class="t-k">"Files"</span>: [
+            { <span class="t-k">"Source"</span>: <span class="t-s">"fullchain"</span>, <span class="t-k">"FileName"</span>: <span class="t-s">"api.crt"</span> },
+            { <span class="t-k">"Source"</span>: <span class="t-s">"key"</span>, <span class="t-k">"FileName"</span>: <span class="t-s">"api.key"</span> }
+          ],
+          <span class="t-k">"RestartPrograms"</span>: [
+            { <span class="t-k">"Path"</span>: <span class="t-s">"C:\\Apps\\Api\\ApiServer.exe"</span>, <span class="t-k">"StopTimeoutSeconds"</span>: <span class="t-n">20</span> }
+          ]
+        },
+        {
+          <span class="t-k">"Name"</span>: <span class="t-s">"TSplus web portal (TSplus 15+: PFX import)"</span>,
+          <span class="t-k">"Kind"</span>: <span class="t-s">"TSplus"</span>
+        },
+        {
+          <span class="t-k">"Name"</span>: <span class="t-s">"TSplus web portal (older versions: cert.jks)"</span>,
+          <span class="t-k">"Kind"</span>: <span class="t-s">"TSplusJks"</span>
+        }
+      ],
+      <span class="t-k">"Commands"</span>: []
+    }
+  ]
+}</code></pre><p>A server has only one TSplus, so in practice keep just one of the two TSplus destinations: <code>TSplus</code> for version 15 and later, <code>TSplusJks</code> for older versions.</p><h3 id="together-linux">Linux: HAProxy and Cockpit</h3><pre class="code" data-lang="json"><code>{
+  <span class="t-k">"Port"</span>: <span class="t-n">9443</span>,
+  <span class="t-k">"ApiKeyHash"</span>: <span class="t-s">"(created by: sudo ./CertificateGet.Agent install)"</span>,
+  <span class="t-k">"AllowedIps"</span>: [],
+  <span class="t-k">"TlsPfx"</span>: <span class="t-s">"agent-tls.pfx"</span>,
+  <span class="t-k">"TlsPassword"</span>: <span class="t-s">"(created automatically)"</span>,
+  <span class="t-k">"KeepBackups"</span>: <span class="t-n">5</span>,
+  <span class="t-k">"Slots"</span>: [
+    {
+      <span class="t-k">"Name"</span>: <span class="t-s">"reddin-wildcard"</span>,
+      <span class="t-k">"Description"</span>: <span class="t-s">"HAProxy + Cockpit on this server"</span>,
+      <span class="t-k">"Destinations"</span>: [
+        {
+          <span class="t-k">"Name"</span>: <span class="t-s">"HAProxy"</span>,
+          <span class="t-k">"Folder"</span>: <span class="t-s">"/etc/haproxy/certs"</span>,
+          <span class="t-k">"Files"</span>: [
+            { <span class="t-k">"Source"</span>: <span class="t-s">"combined"</span>, <span class="t-k">"FileName"</span>: <span class="t-s">"reddinassessments.com.pem"</span> }
+          ],
+          <span class="t-k">"Commands"</span>: [ <span class="t-s">"haproxy -c -f /etc/haproxy/haproxy.cfg &amp;&amp; systemctl reload haproxy"</span> ]
+        },
+        {
+          <span class="t-k">"Name"</span>: <span class="t-s">"Cockpit"</span>,
+          <span class="t-k">"Folder"</span>: <span class="t-s">"/etc/cockpit/ws-certs.d"</span>,
+          <span class="t-k">"Files"</span>: [
+            { <span class="t-k">"Source"</span>: <span class="t-s">"combined"</span>, <span class="t-k">"FileName"</span>: <span class="t-s">"reddinassessments.cert"</span> }
+          ],
+          <span class="t-k">"Commands"</span>: [ <span class="t-s">"chgrp cockpit-ws {folder}/reddinassessments.cert &amp;&amp; chmod 640 {folder}/reddinassessments.cert &amp;&amp; restorecon -F {folder}/reddinassessments.cert ; systemctl reset-failed cockpit.socket cockpit ; systemctl restart cockpit.socket ; systemctl try-restart cockpit"</span> ]
+        }
+      ],
+      <span class="t-k">"Commands"</span>: []
+    }
+  ]
+}</code></pre><h2 id="next3"><span class="k">Template Guide</span>Where to go next</h2><div class="next"><a href="reference.html"><b>Reference &rarr;</b><span>Every field, source, command and endpoint</span></a><a href="programmers-guide.html"><b>Programmer's Guide &rarr;</b><span>How deployments run, security, platform notes</span></a><a href="getting-started.html"><b>Getting Started &rarr;</b><span>Install the agent and connect the app</span></a></div>
+    <footer>CertificateGet Agent &mdash; four volumes. The reference is generated from <code>AgentConfig.cs</code>, <code>ProgramRestarter.cs</code>, <code>Program.cs</code> and <code>Deployer.cs</code>, and the combined examples are the files in <code>CertificateGet.Agent/examples</code>, so fields, defaults and commands are the ones in the build.</footer>
+  </div>
+</main>
+</div>
+<script>
+const q = document.getElementById('filter');
+if (q) {
+  const rows = [...document.querySelectorAll('tr.fn')];
+  q.addEventListener('input', () => {
+    const t = q.value.trim().toLowerCase();
+    rows.forEach(r => r.classList.toggle('hide', t && !r.dataset.k.includes(t)));
+    document.querySelectorAll('.tw').forEach(w => {
+      const body = w.querySelector('tbody');
+      if (!body || !body.querySelector('tr.fn')) return;
+      const any = [...body.querySelectorAll('tr')].some(r => !r.classList.contains('hide'));
+      w.classList.toggle('hide', !any);
+    });
+  });
+}
+/*  Which sidebar entry is lit: by position, not IntersectionObserver.  One click
+    crosses several headings at once, they all arrive in a single callback, and the
+    last one processed wins - which lights the wrong chapter.  */
+const links = [...document.querySelectorAll('.nav__l a')];
+if (links.length) {
+  const byId  = new Map(links.map(a => [a.getAttribute('href').slice(1), a]));
+  const marks = [...document.querySelectorAll('h2[id],h3[id]')].filter(h => byId.has(h.id));
+  const light = a => links.forEach(l => l.classList.toggle('on', l === a));
+  let held = null, holdUntil = 0, queued = false;
+  function spy() {
+    queued = false;
+    if (held) { light(held); return; }
+    let cur = marks[0];
+    for (const h of marks) {
+      if (h.getBoundingClientRect().top <= 120) cur = h; else break;
+    }
+    if (innerHeight + scrollY >= document.documentElement.scrollHeight - 2)
+      cur = marks[marks.length - 1];
+    if (cur) light(byId.get(cur.id));
+  }
+  links.forEach(a => a.addEventListener('click', () => {
+    held = a; holdUntil = performance.now() + 700; light(a);
+  }));
+  const later = () => { if (!queued) { queued = true; requestAnimationFrame(spy); } };
+  addEventListener('scroll', () => {
+    if (held && performance.now() > holdUntil) held = null;
+    later();
+  }, {passive: true});
+  addEventListener('resize', later);
+  if (marks.length) spy();
+}
+</script>

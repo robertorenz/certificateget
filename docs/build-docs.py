@@ -563,6 +563,14 @@ def page(filename, title, eyebrow, heading, sub, chips, groups, body, showfilter
            '  </div>\n</main>\n</div>\n<script>%s</script>\n'
            % (esc(title), CSS, nav, esc(eyebrow), esc(heading), sub, chiphtml, body, JS))
     io.open(os.path.join(ROOT, 'docs', filename), 'w', encoding='utf-8', newline='\n').write(doc)
+    #  The copy built into the app (Help, F1) opens from disk, so there the
+    #  volumes link to each other by file name instead of by published address.
+    local = doc
+    for name, url in PUBLISHED.items():
+        local = local.replace(url, name)
+    os.makedirs(os.path.join(ROOT, 'docs', 'help'), exist_ok=True)
+    io.open(os.path.join(ROOT, 'docs', 'help', filename), 'w', encoding='utf-8', newline='\n').write(
+        '<!doctype html>\n<meta charset="utf-8">\n' + local)
     return len(doc)
 
 GS, PG, TG, RF = 'getting-started.html', 'programmers-guide.html', 'template-guide.html', 'reference.html'
@@ -707,6 +715,7 @@ OK — configuration looks good.''', 'text'))
         '<div>Leave <b>Enabled</b> and <b>Deploy automatically after every issuance / renewal</b> ticked, then <b>Save target</b>.</div>',
         '<div>Click <b>Deploy now</b> to send the current certificate straight away.</div>',
     ]))
+    add('<p>These four volumes are also built into the app: click <b>Help</b> at the bottom of the sidebar, or press <b>F1</b>.</p>')
 
     add('<h2 id="verify"><span class="k">Step 5</span>Check the first deployment</h2>')
     add('<p>The app\'s <b>Activity log</b> shows one line per agent step. A successful run looks like this:</p>')

@@ -22,7 +22,15 @@ public partial class MainWindow : Window
         Instance = this;
         UpdateStorePath();
         NavCerts.IsChecked = true;
+        PreviewKeyDown += (_, e) =>
+        {
+            if (e.Key == System.Windows.Input.Key.F1) { e.Handled = true; ShowHelp(); }
+        };
     }
+
+    public void ShowHelp() => Modal.ShowWindow(new HelpDialog());
+
+    private void Help_Click(object sender, RoutedEventArgs e) => ShowHelp();
 
     public void UpdateStorePath() => StorePathText.Text = SettingsService.StorePath;
 
