@@ -7,7 +7,7 @@ A Windows desktop app (C# / WPF, .NET 9) that gets free TLS certificates from **
 ## Features
 
 - **Standard and wildcard certificates.** Wildcards (`*.example.com`) can also cover the bare domain.
-- **Six ways to validate:**
+- **Nine ways to validate:**
   | Method | When to use it |
   |---|---|
   | HTTP, built-in web server | Run the app on the machine the domain points to; it briefly answers on port 80. No IIS needed. |
@@ -16,6 +16,9 @@ A Windows desktop app (C# / WPF, .NET 9) that gets free TLS certificates from **
   | DNS, Cloudflare | Creates and removes the TXT records for you through the Cloudflare API. |
 | DNS, Hostinger | Creates and removes the TXT records for you through the Hostinger API. |
 | DNS, Constellix | Creates and removes the TXT records for you through the Constellix API (v4, API key + secret key). |
+| DNS, acme-dns | Works with **any** DNS host. Once per domain you create a CNAME for `_acme-challenge`; after that the app only talks to the acme-dns server and never needs your DNS credentials. |
+| DNS, DNS Made Easy | Creates and removes the TXT records for you through the DNS Made Easy API (v2.0, API key + secret key). |
+| DNS, Namecheap | Creates and removes the TXT records for you through the Namecheap API. Every other record is written back unchanged. |
 - **Every format, every time.** Each issuance writes:
   | File | Use |
   |---|---|
@@ -49,7 +52,7 @@ A Windows desktop app (C# / WPF, .NET 9) that gets free TLS certificates from **
   - **SFTP / SSH**: uploads files atomically and runs a command such as `haproxy -c … && systemctl reload haproxy`. Nothing to install on the server; presets for HAProxy and nginx.
 - **Activity log.** Every request, challenge, validation, export, install and error is recorded with search, level filter and CSV export.
 - **Staging and Production.** Test against Let's Encrypt staging without hitting rate limits, then switch to Production.
-- **Secrets protected.** PFX passwords, ACME account keys and the Cloudflare token are encrypted with Windows DPAPI for your user account.
+- **Secrets protected.** PFX passwords, ACME account keys, DNS API tokens and keys, and acme-dns passwords are encrypted with Windows DPAPI for your user account.
 - Popups are modal dialogs, not message boxes. The interface uses a slate, blue and teal theme.
 
 ## Requirements
@@ -106,6 +109,28 @@ The CertificateGet Agent has a four-volume manual in [`docs/`](docs), generated 
 3. [Template Guide](https://claude.ai/artifact/4NaQZxJRzNB1EgG6FPq4i7): ready-made `agent.json` for NetTalk, HAProxy, Cockpit and TSplus
 4. [Reference](https://claude.ai/artifact/WfYNLoBapj4dsyLWJMPU8s): every `agent.json` field, source, command and endpoint
 
+### acme-dns
+
+Use this when your DNS host has no API, or when you do not want DNS credentials on this PC. [acme-dns](https://github.com/joohoi/acme-dns) is a tiny DNS server that only answers `_acme-challenge` TXT queries.
+
+1. In **Settings → acme-dns server**, keep `https://auth.acme-dns.io` (the public server, fine for testing) or enter your own server. **Test server** checks that it answers.
+2. Request a certificate with **DNS — acme-dns**. On the first request for a domain, the app registers it and shows the one CNAME to create, for example `_acme-challenge.example.com CNAME 8e5700ea-a4bf-41c7-8a77-e990661dcc6a.auth.acme-dns.io`. One CNAME covers both `example.com` and `*.example.com`. Remove any existing `_acme-challenge` TXT record with that name first.
+3. Create the CNAME at your DNS host, click **Check DNS now** until it shows as visible, then **Continue validation**.
+
+From then on, renewals need no DNS changes. The registrations and their CNAME targets are listed in Settings, with **Copy target** and **Remove**. For production, run your own acme-dns server: anyone holding a registration's credentials can get certificates for that domain.
+
+### DNS Made Easy keys
+
+In DNS Made Easy, open **Config → Account Information** and copy the **API key** and **secret key**. Paste both in **Settings** and click **Test keys**; it lists the managed domains. Requests are signed with the current time, so the PC clock must be correct. Each TXT value is its own record, and afterwards the app deletes only the records it created.
+
+### Namecheap API access
+
+1. In Namecheap, open **Profile → Tools → API Access** and turn it on. Namecheap only allows this for accounts that meet its criteria (for example a minimum number of domains or account balance).
+2. Whitelist this PC's **public IPv4** address there.
+3. In **Settings**, enter the **API user** (your Namecheap user name) and the **API key**. Leave **Client IP** empty to detect it automatically (via api.ipify.org), or enter the whitelisted address. Click **Test**; it lists your domains and shows the IP used.
+
+The domain must use Namecheap BasicDNS or PremiumDNS. Namecheap's API can only replace a domain's whole record list, so for every change the app reads all records, adds or removes only its own `_acme-challenge` values, and writes every other record back exactly as it was, keeping the mail (MX) setting.
+
 ## Where things are stored
 
 Default location: `%LOCALAPPDATA%\CertificateGet\Store`. You can change it in Settings.
@@ -131,6 +156,9 @@ CertificateGet/
   Services/ChallengeHelpers.cs  built-in HTTP-01 server, DNS checker, Cloudflare client, IDnsProvider
   Services/HostingerDns.cs      Hostinger DNS API client
   Services/ConstellixDns.cs     Constellix DNS API v4 client (HMAC-signed requests)
+  Services/DnsMadeEasyDns.cs    DNS Made Easy API v2.0 client (HMAC-signed requests)
+  Services/NamecheapDns.cs      Namecheap XML API client (read, merge and write back the host list)
+  Services/AcmeDns.cs           acme-dns client: registration, TXT updates, CNAME delegation
   Services/DeployService.cs     deployment to SFTP servers and CertificateGet agents
   Services/CertificateStore.cs  key/CSR generation, file writing (PFX via Pkcs12Builder), export, Windows store install
   Services/AppServices.cs       settings, DPAPI helpers, activity log

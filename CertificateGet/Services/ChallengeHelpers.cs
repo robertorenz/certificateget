@@ -116,12 +116,27 @@ public static class DnsChecker
         return result;
     }
 
+    /// <summary>Returns the CNAME targets currently visible for <paramref name="recordName"/>, without the trailing dot.</summary>
+    public static async Task<HashSet<string>> GetCnameAsync(string recordName)
+    {
+        var client = CreateClient();
+        var result = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            var response = await client.QueryAsync(recordName, QueryType.CNAME);
+            foreach (var c in response.Answers.CnameRecords())
+                result.Add(c.CanonicalName.Value.TrimEnd('.'));
+        }
+        catch { /* treat as not found */ }
+        return result;
+    }
+
     public static async Task<bool> AllVisibleAsync(IEnumerable<Models.DnsTxtRecord> records)
     {
         var all = true;
-        foreach (var group in records.GroupBy(r => r.RecordName, StringComparer.OrdinalIgnoreCase))
+        foreach (var group in records.GroupBy(r => (r.Type, r.RecordName.ToLowerInvariant())))
         {
-            var values = await GetTxtAsync(group.Key);
+            var values = group.Key.Type == "CNAME" ? await GetCnameAsync(group.First().RecordName) : await GetTxtAsync(group.First().RecordName);
             foreach (var r in group)
             {
                 r.Found = values.Contains(r.Value);

@@ -137,6 +137,24 @@
                                     <TextBlock x:Name="ConstellixHint" Style="{StaticResource Hint}" Text="Creates and removes the TXT records through the Constellix API. Configure the API key and secret key in Settings."/>
                                 </StackPanel>
                             </RadioButton>
+                            <RadioButton x:Name="MDnsAcmeDns" Style="{StaticResource OptionCard}" GroupName="method" Checked="Method_Changed">
+                                <StackPanel>
+                                    <TextBlock Text="DNS — acme-dns (any DNS provider)" FontWeight="SemiBold"/>
+                                    <TextBlock x:Name="AcmeDnsHint" Style="{StaticResource Hint}" Text="Works with any DNS host. Once per domain you create a CNAME for _acme-challenge; after that the app only talks to the acme-dns server."/>
+                                </StackPanel>
+                            </RadioButton>
+                            <RadioButton x:Name="MDnsMadeEasy" Style="{StaticResource OptionCard}" GroupName="method" Checked="Method_Changed">
+                                <StackPanel>
+                                    <TextBlock Text="DNS — DNS Made Easy (automatic)" FontWeight="SemiBold"/>
+                                    <TextBlock x:Name="DnsMadeEasyHint" Style="{StaticResource Hint}" Text="Creates and removes the TXT records through the DNS Made Easy API. Configure the API key and secret key in Settings."/>
+                                </StackPanel>
+                            </RadioButton>
+                            <RadioButton x:Name="MDnsNamecheap" Style="{StaticResource OptionCard}" GroupName="method" Checked="Method_Changed">
+                                <StackPanel>
+                                    <TextBlock Text="DNS — Namecheap (automatic)" FontWeight="SemiBold"/>
+                                    <TextBlock x:Name="NamecheapHint" Style="{StaticResource Hint}" Text="Creates and removes the TXT records through the Namecheap API. Configure the API user and key in Settings."/>
+                                </StackPanel>
+                            </RadioButton>
                         </StackPanel>
                     </Border>
 

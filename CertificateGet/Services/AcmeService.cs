@@ -96,7 +96,8 @@ public class AcmeService
 
     public async Task<IssuedCertificate> IssueAsync(string? pfxPassword, IIssueUi ui, CancellationToken ct)
     {
-        var isDns = _p.Challenge is ChallengeMethod.DnsManual or ChallengeMethod.DnsCloudflare or ChallengeMethod.DnsHostinger or ChallengeMethod.DnsConstellix;
+        var isDns = _p.Challenge is ChallengeMethod.DnsManual or ChallengeMethod.DnsCloudflare or ChallengeMethod.DnsHostinger or ChallengeMethod.DnsConstellix
+            or ChallengeMethod.DnsAcmeDns or ChallengeMethod.DnsMadeEasy or ChallengeMethod.DnsNamecheap;
         if (_p.IsWildcard && !isDns)
             throw new InvalidOperationException("Wildcard certificates can only be validated with a DNS challenge.");
 
@@ -132,7 +133,10 @@ public class AcmeService
                 case ChallengeMethod.DnsManual: await RunDnsManual(ctx, pending, ui, ct); break;
                 case ChallengeMethod.DnsCloudflare:
                 case ChallengeMethod.DnsHostinger:
-                case ChallengeMethod.DnsConstellix: await RunDnsProvider(ctx, pending, ct); break;
+                case ChallengeMethod.DnsConstellix:
+                case ChallengeMethod.DnsAcmeDns:
+                case ChallengeMethod.DnsMadeEasy:
+                case ChallengeMethod.DnsNamecheap: await RunDnsProvider(ctx, pending, ui, ct); break;
             }
         }
 
@@ -285,13 +289,56 @@ public class AcmeService
             ChallengeMethod.DnsConstellix => new ConstellixDns(
                 Secret.Unprotect(s.ProtectedConstellixApiKey) ?? throw new InvalidOperationException("No Constellix API key configured. Add it in Settings."),
                 Secret.Unprotect(s.ProtectedConstellixSecretKey) ?? throw new InvalidOperationException("No Constellix secret key configured. Add it in Settings.")),
+            ChallengeMethod.DnsMadeEasy => new DnsMadeEasyDns(
+                Secret.Unprotect(s.ProtectedDnsMadeEasyApiKey) ?? throw new InvalidOperationException("No DNS Made Easy API key configured. Add it in Settings."),
+                Secret.Unprotect(s.ProtectedDnsMadeEasySecretKey) ?? throw new InvalidOperationException("No DNS Made Easy secret key configured. Add it in Settings.")),
+            ChallengeMethod.DnsNamecheap => new NamecheapDns(
+                string.IsNullOrWhiteSpace(s.NamecheapApiUser) ? throw new InvalidOperationException("No Namecheap API user configured. Add it in Settings.") : s.NamecheapApiUser,
+                Secret.Unprotect(s.ProtectedNamecheapApiKey) ?? throw new InvalidOperationException("No Namecheap API key configured. Add it in Settings."),
+                s.NamecheapClientIp),
+            ChallengeMethod.DnsAcmeDns => new AcmeDnsProvider(s.AcmeDnsAccounts.ToList()),
             _ => throw new NotSupportedException($"{method} is not an automatic DNS provider.")
         };
     }
 
-    private async Task RunDnsProvider(IAcmeContext ctx, List<PendingChallenge> pending, CancellationToken ct)
+    /// <summary>acme-dns: registers every domain that has no account yet, then makes sure each
+    /// _acme-challenge CNAME points at its acme-dns name, asking the user to create the missing ones.</summary>
+    private async Task PrepareAcmeDns(List<DnsTxtRecord> records, IIssueUi ui, CancellationToken ct)
+    {
+        var s = SettingsService.Current;
+        var accounts = new List<AcmeDnsAccount>();
+        foreach (var domain in records.Select(r => AcmeDnsProvider.BaseDomain(r.RecordName)).Distinct())
+        {
+            var account = s.AcmeDnsAccounts.FirstOrDefault(a => a.Domain.Equals(domain, StringComparison.OrdinalIgnoreCase));
+            if (account == null)
+            {
+                Step($"acme-dns: registering {domain} on {AcmeDnsProvider.NormalizeServer(s.AcmeDnsServer)}…");
+                var (created, password) = await AcmeDnsProvider.RegisterAsync(s.AcmeDnsServer, domain);
+                created.ProtectedPassword = Secret.Protect(password);
+                s.AcmeDnsAccounts.Add(created);
+                SettingsService.Save(s);
+                account = created;
+            }
+            accounts.Add(account);
+        }
+
+        var cnames = accounts.Select(a => new DnsTxtRecord { Type = "CNAME", Domain = a.Domain, RecordName = a.CnameName, Value = a.FullDomain }).ToList();
+        if (await DnsChecker.AllVisibleAsync(cnames))
+        {
+            Step("acme-dns: every _acme-challenge CNAME is in place.", LogLevel.Success);
+            return;
+        }
+        foreach (var c in cnames.Where(c => !c.Found))
+            Step($"acme-dns: CNAME needed (one time): {c.RecordName} → {c.Value}", LogLevel.Warning);
+        if (!await ui.ConfirmDnsRecordsAsync(cnames))
+            throw new OperationCanceledException("Cancelled while waiting for the acme-dns CNAME records.");
+        ct.ThrowIfCancellationRequested();
+    }
+
+    private async Task RunDnsProvider(IAcmeContext ctx, List<PendingChallenge> pending, IIssueUi ui, CancellationToken ct)
     {
         var records = BuildDnsRecords(ctx, pending);
+        if (_p.Challenge == ChallengeMethod.DnsAcmeDns) await PrepareAcmeDns(records, ui, ct);
         using var dns = CreateDnsProvider(_p.Challenge);
         var added = false;
         try
@@ -306,7 +353,7 @@ public class AcmeService
         {
             // Also runs after a partial add, so any record that did get created is removed.
             await dns.CleanupAsync();
-            if (added) Step($"{dns.DisplayName}: removed challenge TXT records.");
+            if (added && _p.Challenge != ChallengeMethod.DnsAcmeDns) Step($"{dns.DisplayName}: removed challenge TXT records.");
         }
     }
 

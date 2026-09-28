@@ -89,6 +89,9 @@ public partial class NewCertificateView : UserControl, IIssueUi
         MDnsCloudflare.IsChecked = p.Challenge == ChallengeMethod.DnsCloudflare;
         MDnsHostinger.IsChecked = p.Challenge == ChallengeMethod.DnsHostinger;
         MDnsConstellix.IsChecked = p.Challenge == ChallengeMethod.DnsConstellix;
+        MDnsAcmeDns.IsChecked = p.Challenge == ChallengeMethod.DnsAcmeDns;
+        MDnsMadeEasy.IsChecked = p.Challenge == ChallengeMethod.DnsMadeEasy;
+        MDnsNamecheap.IsChecked = p.Challenge == ChallengeMethod.DnsNamecheap;
         PortBox.Text = p.HttpPort.ToString();
         WebRootBox.Text = p.WebRootPath ?? "";
         EnvStaging.IsChecked = p.Environment == AcmeEnvironment.Staging;
@@ -133,7 +136,7 @@ public partial class NewCertificateView : UserControl, IIssueUi
 
     private void UpdateMethodPanels()
     {
-        if (HttpPortPanel == null || MHttpSelf == null) return;
+        if (HttpPortPanel == null || MHttpSelf == null || NamecheapHint == null) return;
         var needsDns = TypeWildcard.IsChecked == true || DomainsBox.Text.Contains('*');
         MHttpSelf.IsEnabled = MHttpWebRoot.IsEnabled = !needsDns;
         if (needsDns && MHttpSelf.IsChecked != true && MHttpWebRoot.IsChecked != true) { /* already DNS */ }
@@ -151,6 +154,18 @@ public partial class NewCertificateView : UserControl, IIssueUi
         ConstellixHint.Text = SettingsService.Current.ProtectedConstellixApiKey != null && SettingsService.Current.ProtectedConstellixSecretKey != null
             ? "Creates and removes the TXT records through the Constellix API using the keys saved in Settings."
             : "Creates and removes the TXT records through the Constellix API. ⚠ No API key / secret key configured yet — add them in Settings.";
+        var s = SettingsService.Current;
+        var registered = s.AcmeDnsAccounts.Select(a => a.Domain).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var newDomains = CollectDomains().Select(d => d.StartsWith("*.") ? d[2..] : d).Distinct().Where(d => !registered.Contains(d)).ToList();
+        AcmeDnsHint.Text = "Works with any DNS host. Once per domain you create a CNAME for _acme-challenge; after that the app only talks to the acme-dns server" +
+                           $" ({AcmeDnsProvider.NormalizeServer(s.AcmeDnsServer)})." +
+                           (newDomains.Count > 0 ? $" Not registered yet: {string.Join(", ", newDomains.Take(4))}{(newDomains.Count > 4 ? "…" : "")} — the app registers them and shows the CNAME to create." : "");
+        DnsMadeEasyHint.Text = s.ProtectedDnsMadeEasyApiKey != null && s.ProtectedDnsMadeEasySecretKey != null
+            ? "Creates and removes the TXT records through the DNS Made Easy API using the keys saved in Settings."
+            : "Creates and removes the TXT records through the DNS Made Easy API. ⚠ No API key / secret key configured yet — add them in Settings.";
+        NamecheapHint.Text = !string.IsNullOrWhiteSpace(s.NamecheapApiUser) && s.ProtectedNamecheapApiKey != null
+            ? "Creates and removes the TXT records through the Namecheap API using the key saved in Settings. Other records are written back unchanged."
+            : "Creates and removes the TXT records through the Namecheap API. ⚠ No API user / key configured yet — add them in Settings.";
     }
 
     private void BrowseWebRoot_Click(object sender, RoutedEventArgs e)
@@ -224,6 +239,9 @@ public partial class NewCertificateView : UserControl, IIssueUi
             : MDnsCloudflare.IsChecked == true ? ChallengeMethod.DnsCloudflare
             : MDnsHostinger.IsChecked == true ? ChallengeMethod.DnsHostinger
             : MDnsConstellix.IsChecked == true ? ChallengeMethod.DnsConstellix
+            : MDnsAcmeDns.IsChecked == true ? ChallengeMethod.DnsAcmeDns
+            : MDnsMadeEasy.IsChecked == true ? ChallengeMethod.DnsMadeEasy
+            : MDnsNamecheap.IsChecked == true ? ChallengeMethod.DnsNamecheap
             : ChallengeMethod.DnsManual;
 
         if (domains.Any(d => d.StartsWith("*.")) && method is ChallengeMethod.HttpSelfHosted or ChallengeMethod.HttpWebRoot)
@@ -250,6 +268,18 @@ public partial class NewCertificateView : UserControl, IIssueUi
             (SettingsService.Current.ProtectedConstellixApiKey == null || SettingsService.Current.ProtectedConstellixSecretKey == null))
         {
             Modal.Warning("Constellix keys missing", "Add your Constellix API key and secret key in Settings (Constellix → Edit My Account → API Keys).");
+            return null;
+        }
+        if (method == ChallengeMethod.DnsMadeEasy &&
+            (SettingsService.Current.ProtectedDnsMadeEasyApiKey == null || SettingsService.Current.ProtectedDnsMadeEasySecretKey == null))
+        {
+            Modal.Warning("DNS Made Easy keys missing", "Add your DNS Made Easy API key and secret key in Settings (DNS Made Easy → Config → Account Information).");
+            return null;
+        }
+        if (method == ChallengeMethod.DnsNamecheap &&
+            (string.IsNullOrWhiteSpace(SettingsService.Current.NamecheapApiUser) || SettingsService.Current.ProtectedNamecheapApiKey == null))
+        {
+            Modal.Warning("Namecheap API access missing", "Add your Namecheap API user and API key in Settings (Namecheap → Profile → Tools → API Access).");
             return null;
         }
         if (method == ChallengeMethod.DnsHostinger && SettingsService.Current.ProtectedHostingerToken == null)

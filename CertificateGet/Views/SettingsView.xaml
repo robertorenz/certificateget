@@ -159,6 +159,85 @@
                             </Grid>
                             <TextBlock Style="{StaticResource Hint}" Text="In Constellix: Edit My Account → API Keys (the secret key is shown when the key is created). Requests are signed with the current time, so this PC's clock must be correct. Stored encrypted (DPAPI)."/>
 
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="DNS Made Easy API key" Style="{StaticResource FieldLabel}"/>
+                                    <PasswordBox x:Name="DmeApiKeyBox"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="DNS Made Easy secret key" Style="{StaticResource FieldLabel}"/>
+                                    <PasswordBox x:Name="DmeSecretBox"/>
+                                </StackPanel>
+                                <Button Grid.Column="3" Content="Test keys" Margin="8,0,0,0" VerticalAlignment="Bottom" Click="TestDnsMadeEasy_Click"/>
+                            </Grid>
+                            <TextBlock Style="{StaticResource Hint}" Text="In DNS Made Easy: Config → Account Information shows the API key and secret key. Requests are signed with the current time, so this PC's clock must be correct. Stored encrypted (DPAPI)."/>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="170"/>
+                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition Width="12"/>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="Namecheap API user" Style="{StaticResource FieldLabel}"/>
+                                    <TextBox x:Name="NamecheapUserBox" Tag="account user name"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Namecheap API key" Style="{StaticResource FieldLabel}"/>
+                                    <PasswordBox x:Name="NamecheapKeyBox"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="4">
+                                    <TextBlock Text="Client IP" Style="{StaticResource FieldLabel}"/>
+                                    <TextBox x:Name="NamecheapIpBox" Tag="detect" FontFamily="{StaticResource MonoFont}"/>
+                                </StackPanel>
+                                <Button Grid.Column="5" Content="Test" Margin="8,0,0,0" VerticalAlignment="Bottom" Click="TestNamecheap_Click"/>
+                            </Grid>
+                            <TextBlock Style="{StaticResource Hint}" Text="In Namecheap: Profile → Tools → API Access. Turn it on (Namecheap only allows this for qualifying accounts) and whitelist this PC's public IPv4. Leave Client IP empty to detect it. The domain must use Namecheap's DNS. Namecheap replaces all records on every change, so the app writes every other record back unchanged. Stored encrypted (DPAPI)."/>
+
+                            <TextBlock Text="acme-dns server" Style="{StaticResource FieldLabel}"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="AcmeDnsServerBox" Tag="https://auth.acme-dns.io" FontFamily="{StaticResource MonoFont}"/>
+                                <Button Grid.Column="1" Content="Test server" Margin="8,0,0,0" Click="TestAcmeDns_Click"/>
+                            </Grid>
+                            <TextBlock Style="{StaticResource Hint}" Text="Used for new registrations. The public server is fine for testing; for production, run your own acme-dns. Each domain is registered on its first request and needs one CNAME: _acme-challenge.domain → the name shown below."/>
+                            <ItemsControl x:Name="AcmeDnsList" Margin="0,6,0,0">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="6" Padding="10,7" Margin="0,0,0,6">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding Domain}" FontWeight="SemiBold"/>
+                                                    <TextBlock FontFamily="{StaticResource MonoFont}" FontSize="11.5" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap">
+                                                        <Run Text="{Binding CnameName, Mode=OneWay}"/><Run Text="  CNAME  "/><Run Text="{Binding FullDomain, Mode=OneWay}"/>
+                                                    </TextBlock>
+                                                </StackPanel>
+                                                <Button Grid.Column="1" Content="Copy target" Style="{StaticResource GhostButton}" Foreground="{StaticResource PrimaryBrush}" Click="CopyAcmeDns_Click" VerticalAlignment="Center"/>
+                                                <Button Grid.Column="2" Content="Remove" Style="{StaticResource GhostButton}" Click="RemoveAcmeDns_Click" VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock x:Name="AcmeDnsEmpty" Style="{StaticResource Hint}" Text="No domains registered yet."/>
+
                             <TextBlock Text="Public DNS resolvers used to check TXT records" Style="{StaticResource FieldLabel}"/>
                             <TextBox x:Name="ResolversBox" Tag="1.1.1.1, 8.8.8.8"/>
                             <TextBlock Text="Maximum wait for DNS propagation (seconds)" Style="{StaticResource FieldLabel}"/>

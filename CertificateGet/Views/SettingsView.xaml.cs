@@ -25,6 +25,9 @@ public partial class SettingsView : UserControl
 
     private const string TokenUnchanged = "••••••••";
 
+    /// <summary>acme-dns registrations removed on this page; applied on Save (ones registered meanwhile are kept).</summary>
+    private readonly HashSet<string> _removedAcmeDns = new(StringComparer.OrdinalIgnoreCase);
+
     public SettingsView() => InitializeComponent();
 
     public void Load()
@@ -46,6 +49,14 @@ public partial class SettingsView : UserControl
         HostingerTokenBox.Password = s.ProtectedHostingerToken != null ? TokenUnchanged : "";
         ConstellixApiKeyBox.Password = s.ProtectedConstellixApiKey != null ? TokenUnchanged : "";
         ConstellixSecretBox.Password = s.ProtectedConstellixSecretKey != null ? TokenUnchanged : "";
+        DmeApiKeyBox.Password = s.ProtectedDnsMadeEasyApiKey != null ? TokenUnchanged : "";
+        DmeSecretBox.Password = s.ProtectedDnsMadeEasySecretKey != null ? TokenUnchanged : "";
+        NamecheapUserBox.Text = s.NamecheapApiUser ?? "";
+        NamecheapKeyBox.Password = s.ProtectedNamecheapApiKey != null ? TokenUnchanged : "";
+        NamecheapIpBox.Text = s.NamecheapClientIp ?? "";
+        AcmeDnsServerBox.Text = s.AcmeDnsServer;
+        _removedAcmeDns.Clear();
+        ShowAcmeDnsAccounts();
         ResolversBox.Text = s.DnsResolvers;
         var chosen = CertFileKind.ForIssuance().ToHashSet();
         _formatChoices = CertFileKind.All.Select(k => new FormatChoice
@@ -171,6 +182,103 @@ public partial class SettingsView : UserControl
         }
     }
 
+    private static string? Pick(PasswordBox box, string? stored) =>
+        box.Password == TokenUnchanged ? Secret.Unprotect(stored) : box.Password.Trim();
+
+    private async void TestDnsMadeEasy_Click(object sender, RoutedEventArgs e)
+    {
+        var apiKey = Pick(DmeApiKeyBox, SettingsService.Current.ProtectedDnsMadeEasyApiKey);
+        var secret = Pick(DmeSecretBox, SettingsService.Current.ProtectedDnsMadeEasySecretKey);
+        if (string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(secret))
+        {
+            Modal.Warning("Keys missing", "Enter both the DNS Made Easy API key and the secret key.");
+            return;
+        }
+        try
+        {
+            using var c = new DnsMadeEasyDns(apiKey, secret);
+            var domains = await c.ListDomainsAsync();
+            if (domains.Count == 0)
+                Modal.Warning("Keys work, no domains", "DNS Made Easy accepted the keys, but no managed domains were found in this account.");
+            else
+                Modal.Success("Keys work", $"DNS Made Easy accepted the keys. Managed domains ({domains.Count}):\n\n{string.Join("\n", domains.OrderBy(d => d).Take(40))}" +
+                                           (domains.Count > 40 ? $"\n… and {domains.Count - 40} more" : ""));
+        }
+        catch (Exception ex)
+        {
+            Modal.Error("DNS Made Easy test failed", ex.Message);
+        }
+    }
+
+    private async void TestNamecheap_Click(object sender, RoutedEventArgs e)
+    {
+        var user = NamecheapUserBox.Text.Trim();
+        var key = Pick(NamecheapKeyBox, SettingsService.Current.ProtectedNamecheapApiKey);
+        var ip = NamecheapIpBox.Text.Trim();
+        if (user.Length == 0 || string.IsNullOrEmpty(key))
+        {
+            Modal.Warning("API access missing", "Enter the Namecheap API user (your account user name) and the API key.");
+            return;
+        }
+        if (ip.Length > 0 && !IPAddress.TryParse(ip, out _))
+        {
+            Modal.Warning("Invalid client IP", "Enter this PC's public IPv4 address, or leave the field empty to detect it.");
+            return;
+        }
+        try
+        {
+            using var c = new NamecheapDns(user, key, ip);
+            var domains = await c.ListDomainsAsync();
+            var usedIp = await c.ClientIpAsync();
+            if (domains.Count == 0)
+                Modal.Warning("API access works, no domains", $"Namecheap accepted the key from {usedIp}, but no domains were found in this account.");
+            else
+                Modal.Success("API access works", $"Namecheap accepted the key from {usedIp}. Domains ({domains.Count}):\n\n{string.Join("\n", domains.OrderBy(d => d).Take(40))}" +
+                                                 (domains.Count > 40 ? $"\n… and {domains.Count - 40} more" : ""));
+        }
+        catch (Exception ex)
+        {
+            Modal.Error("Namecheap test failed", ex.Message);
+        }
+    }
+
+    private async void TestAcmeDns_Click(object sender, RoutedEventArgs e)
+    {
+        var server = AcmeDnsServerBox.Text.Trim();
+        if (server.Length == 0) { Modal.Warning("Server missing", "Enter the acme-dns server URL."); return; }
+        try
+        {
+            await AcmeDnsProvider.CheckHealthAsync(server);
+            Modal.Success("Server reachable", $"{AcmeDnsProvider.NormalizeServer(server)} answers. Domains are registered on it on their first request.");
+        }
+        catch (Exception ex)
+        {
+            Modal.Error("acme-dns test failed", ex.Message);
+        }
+    }
+
+    private void ShowAcmeDnsAccounts()
+    {
+        var list = SettingsService.Current.AcmeDnsAccounts.Where(a => !_removedAcmeDns.Contains(a.Domain)).OrderBy(a => a.Domain).ToList();
+        AcmeDnsList.ItemsSource = list;
+        AcmeDnsEmpty.Visibility = list.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void CopyAcmeDns_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is AcmeDnsAccount a) Shell.CopyToClipboard(a.FullDomain);
+    }
+
+    private void RemoveAcmeDns_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is not AcmeDnsAccount a) return;
+        if (!Modal.Confirm("Remove acme-dns registration",
+                $"Forget the acme-dns registration for {a.Domain}? The next request registers it again with a new name, and the " +
+                $"CNAME for {a.CnameName} must then be changed. Takes effect when you save.", "Remove", "Cancel", danger: true)) return;
+        _removedAcmeDns.Add(a.Domain);
+        ShowAcmeDnsAccounts();
+    }
+
     private void ResetAccounts_Click(object sender, RoutedEventArgs e)
     {
         if (!Modal.Confirm("Reset Let's Encrypt accounts",
@@ -197,6 +305,19 @@ public partial class SettingsView : UserControl
         if (resolvers.Length == 0 || resolvers.Any(r => !IPAddress.TryParse(r, out _)))
         {
             Modal.Warning("Invalid resolvers", "Enter one or more IP addresses separated by commas, e.g. 1.1.1.1, 8.8.8.8");
+            return;
+        }
+        var ncIp = NamecheapIpBox.Text.Trim();
+        if (ncIp.Length > 0 && !IPAddress.TryParse(ncIp, out _))
+        {
+            Modal.Warning("Invalid client IP", "Enter this PC's public IPv4 address for Namecheap, or leave the field empty to detect it.");
+            return;
+        }
+        var acmeDnsServer = AcmeDnsServerBox.Text.Trim();
+        if (acmeDnsServer.Length == 0) acmeDnsServer = "https://auth.acme-dns.io";
+        if (!Uri.TryCreate(AcmeDnsProvider.NormalizeServer(acmeDnsServer), UriKind.Absolute, out _))
+        {
+            Modal.Warning("Invalid acme-dns server", "Enter the acme-dns server URL, for example https://auth.acme-dns.io");
             return;
         }
         var store = StoreBox.Text.Trim();
@@ -233,11 +354,26 @@ public partial class SettingsView : UserControl
             ProtectedConstellixSecretKey = ConstellixSecretBox.Password == TokenUnchanged
                 ? old.ProtectedConstellixSecretKey
                 : Secret.Protect(ConstellixSecretBox.Password.Trim()),
+            ProtectedDnsMadeEasyApiKey = DmeApiKeyBox.Password == TokenUnchanged
+                ? old.ProtectedDnsMadeEasyApiKey
+                : Secret.Protect(DmeApiKeyBox.Password.Trim()),
+            ProtectedDnsMadeEasySecretKey = DmeSecretBox.Password == TokenUnchanged
+                ? old.ProtectedDnsMadeEasySecretKey
+                : Secret.Protect(DmeSecretBox.Password.Trim()),
+            NamecheapApiUser = string.IsNullOrWhiteSpace(NamecheapUserBox.Text) ? null : NamecheapUserBox.Text.Trim(),
+            ProtectedNamecheapApiKey = NamecheapKeyBox.Password == TokenUnchanged
+                ? old.ProtectedNamecheapApiKey
+                : Secret.Protect(NamecheapKeyBox.Password.Trim()),
+            NamecheapClientIp = ncIp.Length == 0 ? null : ncIp,
+            AcmeDnsServer = AcmeDnsProvider.NormalizeServer(acmeDnsServer),
+            AcmeDnsAccounts = old.AcmeDnsAccounts.Where(a => !_removedAcmeDns.Contains(a.Domain)).ToList(),
             IssueFormats = _formatChoices.Where(c => c.Selected && c.Editable).Select(c => c.Id).ToList(),
             DnsResolvers = string.Join(", ", resolvers),
             DnsPropagationTimeoutSeconds = prop
         };
         SettingsService.Save(s);
+        _removedAcmeDns.Clear();
+        ShowAcmeDnsAccounts();
         ActivityLog.Info("Settings", "Settings saved." + (old.StorePath != s.StorePath ? $" Store moved to {s.StorePath}." : ""));
         MainWindow.Instance?.UpdateStorePath();
         CertificateStore.RaiseChanged();

@@ -11,7 +11,10 @@ public enum ChallengeMethod
     DnsManual,
     DnsCloudflare,
     DnsHostinger,
-    DnsConstellix
+    DnsConstellix,
+    DnsAcmeDns,
+    DnsMadeEasy,
+    DnsNamecheap
 }
 
 public enum CertKeyType { Rsa2048, Rsa3072, Rsa4096, EcdsaP256, EcdsaP384 }
@@ -51,6 +54,9 @@ public class CertificateProfile
         ChallengeMethod.DnsCloudflare => "DNS (Cloudflare)",
         ChallengeMethod.DnsHostinger => "DNS (Hostinger)",
         ChallengeMethod.DnsConstellix => "DNS (Constellix)",
+        ChallengeMethod.DnsAcmeDns => "DNS (acme-dns)",
+        ChallengeMethod.DnsMadeEasy => "DNS (DNS Made Easy)",
+        ChallengeMethod.DnsNamecheap => "DNS (Namecheap)",
         _ => Challenge.ToString()
     };
     [JsonIgnore] public int? DaysLeft => Latest == null ? null : (int)Math.Floor((Latest.NotAfter - DateTime.UtcNow).TotalDays);
@@ -114,6 +120,18 @@ public class AppSettings
     /// <summary>Constellix API key and secret key, DPAPI-protected.</summary>
     public string? ProtectedConstellixApiKey { get; set; }
     public string? ProtectedConstellixSecretKey { get; set; }
+    /// <summary>DNS Made Easy API key and secret key, DPAPI-protected.</summary>
+    public string? ProtectedDnsMadeEasyApiKey { get; set; }
+    public string? ProtectedDnsMadeEasySecretKey { get; set; }
+    /// <summary>Namecheap API user (the account user name) and API key (DPAPI-protected).</summary>
+    public string? NamecheapApiUser { get; set; }
+    public string? ProtectedNamecheapApiKey { get; set; }
+    /// <summary>Public IPv4 whitelisted at Namecheap; empty = detect it on each request.</summary>
+    public string? NamecheapClientIp { get; set; }
+    /// <summary>acme-dns server used for new registrations.</summary>
+    public string AcmeDnsServer { get; set; } = "https://auth.acme-dns.io";
+    /// <summary>One acme-dns registration per base domain; created automatically on the first request.</summary>
+    public List<AcmeDnsAccount> AcmeDnsAccounts { get; set; } = new();
     /// <summary>true = "BEGIN PRIVATE KEY" (PKCS#8); false = traditional "BEGIN RSA/EC PRIVATE KEY".</summary>
     public bool KeyFormatPkcs8 { get; set; } = true;
     /// <summary>true = 3DES/SHA1 PFX for old Windows Server / appliances; false = AES-256.</summary>
@@ -127,14 +145,33 @@ public class AppSettings
     public List<string>? IssueFormats { get; set; }
 }
 
-/// <summary>A TXT record Let's Encrypt wants to see for a DNS-01 challenge.</summary>
+/// <summary>An account on an acme-dns server for one base domain (covers the domain and its wildcard).</summary>
+public class AcmeDnsAccount
+{
+    public string Domain { get; set; } = "";
+    public string Server { get; set; } = "";
+    public string Username { get; set; } = "";
+    public string? ProtectedPassword { get; set; }
+    public string Subdomain { get; set; } = "";
+    /// <summary>What _acme-challenge.&lt;Domain&gt; must be a CNAME to.</summary>
+    public string FullDomain { get; set; } = "";
+    public DateTime CreatedUtc { get; set; } = DateTime.UtcNow;
+
+    [JsonIgnore] public string CnameName => "_acme-challenge." + Domain;
+}
+
+/// <summary>A DNS record Let's Encrypt wants to see for a DNS-01 challenge (TXT), or the one-time
+/// CNAME that delegates _acme-challenge to acme-dns.</summary>
 public class DnsTxtRecord
 {
+    /// <summary>"TXT" or "CNAME".</summary>
+    public string Type { get; set; } = "TXT";
     public string Domain { get; set; } = "";
     public string RecordName { get; set; } = "";
     public string Value { get; set; } = "";
     public bool Found { get; set; }
     [JsonIgnore] public string FoundDisplay => Found ? "Visible" : "Not yet visible";
+    [JsonIgnore] public string ValueLabel => Type == "CNAME" ? "Points to" : "TXT value";
 }
 
 

@@ -21,12 +21,12 @@
                         <TextBlock Text="&#xE774;" Style="{StaticResource Icon}" FontSize="17" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Center"/>
                     </Border>
                     <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="Create these DNS TXT records" FontSize="17" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
-                        <TextBlock Text="Add them at your DNS provider, wait for them to propagate, then continue." Style="{StaticResource PageSubtitle}" Margin="0,2,0,0"/>
+                        <TextBlock x:Name="TitleText" Text="Create these DNS TXT records" FontSize="17" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"/>
+                        <TextBlock x:Name="SubtitleText" Text="Add them at your DNS provider, wait for them to propagate, then continue." Style="{StaticResource PageSubtitle}" Margin="0,2,0,0"/>
                     </StackPanel>
                 </StackPanel>
                 <Border Background="{StaticResource WarningSoftBrush}" CornerRadius="6" Padding="12,8" Margin="0,16,0,0">
-                    <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="#92400E">
+                    <TextBlock x:Name="WarningText" TextWrapping="Wrap" FontSize="12" Foreground="#92400E">
                         When two rows share the same record name (for example a wildcard plus the bare domain) you must create
                         <Bold>both</Bold> TXT values under that name — do not replace one with the other. Use a low TTL (60–300 s) if your provider allows it.
                     </TextBlock>
@@ -68,7 +68,7 @@
                                     </StackPanel>
                                 </Button>
 
-                                <TextBlock Grid.Row="2" Text="TXT value" Foreground="{StaticResource TextMutedBrush}" FontSize="12" VerticalAlignment="Center" Margin="0,8,0,0"/>
+                                <TextBlock Grid.Row="2" Text="{Binding ValueLabel}" Foreground="{StaticResource TextMutedBrush}" FontSize="12" VerticalAlignment="Center" Margin="0,8,0,0"/>
                                 <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Value, Mode=OneWay}" IsReadOnly="True"
                                          FontFamily="{StaticResource MonoFont}" Margin="0,8,8,0"/>
                                 <Button Grid.Row="2" Grid.Column="2" Style="{StaticResource SecondaryButton}" Margin="0,8,0,0"

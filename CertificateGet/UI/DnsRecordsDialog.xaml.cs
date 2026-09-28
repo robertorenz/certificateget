@@ -14,6 +14,13 @@ public partial class DnsRecordsDialog : Window
         InitializeComponent();
         _records = records;
         RecordsList.ItemsSource = records;
+        if (records.Count > 0 && records.All(r => r.Type == "CNAME"))
+        {
+            TitleText.Text = "Create these CNAME records (one time)";
+            SubtitleText.Text = "They hand the _acme-challenge names to acme-dns. After this, renewals need no DNS changes.";
+            WarningText.Text = "Create each record as a CNAME at the DNS provider of that domain. Remove any existing _acme-challenge TXT " +
+                               "record with the same name first, because a name that has a CNAME cannot have other records.";
+        }
         MouseLeftButtonDown += (_, e) => { if (e.ButtonState == MouseButtonState.Pressed) DragMove(); };
     }
 
@@ -37,7 +44,7 @@ public partial class DnsRecordsDialog : Window
         RecordsList.ItemsSource = null;
         RecordsList.ItemsSource = _records;
         var found = _records.Count(r => r.Found);
-        CheckStatus.Text = all ? "All records are visible — ready to validate." : $"{found} of {_records.Count} visible. Propagation can take a few minutes.";
+        CheckStatus.Text = all ? "All records are visible — ready to continue." : $"{found} of {_records.Count} visible. Propagation can take a few minutes.";
         CheckStatus.Foreground = (System.Windows.Media.Brush)FindResource(all ? "SuccessBrush" : "WarningBrush");
         CheckButton.IsEnabled = true;
     }
@@ -48,7 +55,7 @@ public partial class DnsRecordsDialog : Window
         if (!all)
         {
             var go = Modal.Confirm("Records not visible yet",
-                "Not every TXT record is visible on the public resolvers yet. If Let's Encrypt can't see them the validation will fail " +
+                $"Not every {(_records.Any(r => r.Type == "CNAME") ? "CNAME" : "TXT")} record is visible on the public resolvers yet. If Let's Encrypt can't see them the validation will fail " +
                 "and you will have to start again.\n\nValidate anyway?", "Validate anyway", "Keep waiting");
             if (!go)
             {
