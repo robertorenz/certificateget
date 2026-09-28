@@ -45,7 +45,7 @@ A Windows desktop app (C# / WPF, .NET 9) that gets free TLS certificates from **
 - **Stored and ready to reuse.** Every certificate keeps its settings and full issuance history. **Renew** reuses the settings with one click. **Export** writes any formats to a folder and can set a new PFX password or none.
 - **Install in Windows.** Adds the certificate to the Local Machine or Current User store for IIS, RDP or SQL Server.
 - **Deployment to your servers.** Each certificate can have deployment targets. After every issuance or renewal the app pushes the new files automatically; there is also a **Deploy now** button.
-  - **CertificateGet Agent**: a small Windows or Linux service ([CertificateGet.Agent](CertificateGet.Agent/README.md)). It writes the files into any number of folders with the names each app instance expects, restarts services or runs commands, imports into **TSplus**, and keeps backups. Suited to NetTalk, TSplus and HAProxy servers.
+  - **CertificateGet Agent**: a small Windows or Linux service ([CertificateGet.Agent](CertificateGet.Agent/README.md)). It writes the files into any number of folders with the names each app instance expects, restarts services or runs commands, imports into **TSplus**, and keeps backups. Suited to NetTalk, TSplus and HAProxy servers. See the [agent manual](#agent-manual) for install steps and `agent.json` templates for NetTalk, HAProxy, Cockpit and TSplus.
   - **SFTP / SSH**: uploads files atomically and runs a command such as `haproxy -c … && systemctl reload haproxy`. Nothing to install on the server; presets for HAProxy and nginx.
 - **Activity log.** Every request, challenge, validation, export, install and error is recorded with search, level filter and CSV export.
 - **Staging and Production.** Test against Let's Encrypt staging without hitting rate limits, then switch to Production.
@@ -132,12 +132,17 @@ CertificateGet/
   Services/HostingerDns.cs      Hostinger DNS API client
   Services/ConstellixDns.cs     Constellix DNS API v4 client (HMAC-signed requests)
   Services/DeployService.cs     deployment to SFTP servers and CertificateGet agents
-CertificateGet.Agent/           the server agent (ASP.NET Core minimal API, Windows service / systemd)
   Services/CertificateStore.cs  key/CSR generation, file writing (PFX via Pkcs12Builder), export, Windows store install
   Services/AppServices.cs       settings, DPAPI helpers, activity log
   Views/                        Certificates, New certificate, Activity log, Settings pages
   UI/                           modal dialog, DNS records dialog, export dialog, converters
   Themes/Theme.xaml             colours and control styles
+CertificateGet.Agent/           the server agent (ASP.NET Core minimal API, Windows service / systemd)
+  AgentConfig.cs                agent.json model, API key hash, TLS certificate
+  Deployer.cs                   writes files, backups, TSplus import, service restarts, commands
+  ProgramRestarter.cs           restarts desktop programs in the user's session (Windows)
+  examples/                     agent.json for Windows (NetTalk + TSplus) and Linux (HAProxy + Cockpit)
+docs/                           agent manual (four HTML volumes) and build-docs.py that generates them
 ```
 
 ## Notes
