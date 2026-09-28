@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>CertificateGet.Agent</AssemblyName>
     <RootNamespace>CertificateGet.Agent</RootNamespace>
-    <Version>1.1.0</Version>
+    <Version>1.1.1</Version>
     <Description>CertificateGet Agent: receives renewed certificates and installs them into one or more folders on this server.</Description>
     <InvariantGlobalization>true</InvariantGlobalization>
     <IsTransformWebConfigDisabled>true</IsTransformWebConfigDisabled>
