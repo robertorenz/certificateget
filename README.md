@@ -2,7 +2,7 @@
 
 A Windows desktop app (C# / WPF, .NET 9) that gets free TLS certificates from **Let's Encrypt** or **ZeroSSL**, keeps every certificate in every common file format, and logs everything you do.
 
-![Platform](https://img.shields.io/badge/platform-Windows-0F172A) ![.NET](https://img.shields.io/badge/.NET-9-2563EB) ![ACME](https://img.shields.io/badge/ACME-Let's%20Encrypt-0D9488)
+![Platform](https://img.shields.io/badge/platform-Windows-0F172A) ![.NET](https://img.shields.io/badge/.NET-9-2563EB) ![ACME](https://img.shields.io/badge/ACME-Let's%20Encrypt-0D9488) ![License](https://img.shields.io/badge/license-MIT-15803D)
 
 ## Features
 
@@ -221,3 +221,7 @@ docs/                           the manual (four HTML volumes, Spanish in docs/e
 - Let's Encrypt certificates are valid for up to 90 days, and Let's Encrypt is moving to shorter lifetimes. Renew when the app flags a certificate as expiring. Let's Encrypt no longer sends expiry emails.
 - Production rate limits include 5 failed validations per hour per account and hostname, and 50 certificates per registered domain per week. Test with Staging.
 - PFX encryption defaults to 3DES/SHA-1 so it imports on older Windows Server and appliances. Switch to AES-256 in Settings if all your targets support it.
+
+## License
+
+CertificateGet is released under the [MIT License](LICENSE). Copyright (c) 2026 Roberto Renz.

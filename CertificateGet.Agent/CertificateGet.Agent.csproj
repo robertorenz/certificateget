@@ -6,7 +6,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>CertificateGet.Agent</AssemblyName>
     <RootNamespace>CertificateGet.Agent</RootNamespace>
-    <Version>1.1.1</Version>
+    <Version>1.1.2</Version>
+    <Copyright>Copyright (c) 2026 Roberto Renz</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Description>CertificateGet Agent: receives renewed certificates and installs them into one or more folders on this server.</Description>
     <InvariantGlobalization>true</InvariantGlobalization>
     <IsTransformWebConfigDisabled>true</IsTransformWebConfigDisabled>

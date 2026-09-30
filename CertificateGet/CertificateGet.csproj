@@ -6,7 +6,9 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
-    <Version>1.1.1</Version>
+    <Version>1.1.2</Version>
+    <Copyright>Copyright (c) 2026 Roberto Renz</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Product>CertificateGet</Product>
     <Description>Let's Encrypt certificate manager: request, store, export (PFX, CER, KEY, PEM) and log certificates, including wildcards.</Description>
     <Authors>Roberto Renz</Authors>
